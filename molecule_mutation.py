@@ -25,7 +25,7 @@ def find_linker_type(mol):
         - 'single': Single bond linker
         - 'double': Double bond linker
         - 'imine': Imine linker
-        - 'thio': Thioether linker
+        - 'thio': Thiophene linker
         - 'triple': Triple bond linker
 
     Note
