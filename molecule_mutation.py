@@ -123,8 +123,45 @@ def fragment_molecule(mol, linker):
 
     return fragmented_decorated_smi
 
+def replace_linker(fragments, linker_dic):
+    """
+    Replaces the linker in a fragmented molecule with a new linker from the provided dictionary.
 
-def find_replacement(fragments, bio_dic, non_bio_dic):
+    Parameters
+    ----------
+    fragments (list): A list of SMILES strings representing the fragments of the molecule.
+    linker_dic (dict): A dictionary of possible linkers to replace the old linker.
+
+    Returns
+    -------
+    str: A SMILES string representing the new molecule with the replaced linker.
+
+    Notes
+    -----
+    - The function randomly selects a new linker from the dictionary that is not the same as the old linker.
+    - The function combines the fragments with the new linker to form the new molecule.
+    """
+
+    # List of the fragments with attachment points
+    molecule_fragments = [smi for smi in fragments if smi.count('I') == 1]
+    # List of the old linker
+    old_linker = [smi for smi in fragments if smi.count('I') == 2]
+    # RDKit mol object of old linker
+    if not old_linker:
+        old_linker_canon = Chem.CanonSmiles('II')
+    else:
+        old_linker_canon = Chem.CanonSmiles(old_linker[0])
+    # Randomly selecting a linker that is not the old linker
+    random_linker = random.choice([v for k, v in linker_dic.items() if Chem.CanonSmiles(v) != old_linker_canon])
+    # Combining the fragments with the random linker
+    frag_linker = combine_structure(molecule_fragments[0], random_linker)
+    # Combine the remaining fragment with the old linker that is attached to the other fragment
+    frag_linker_frag = combine_structure(molecule_fragments[1], frag_linker)
+    # The new linker is added to a dictionary but doesn't need to be like this
+    return frag_linker_frag
+
+
+def find_replacement_fragment(fragments, bio_dic, non_bio_dic):
     """
     Randomly chooses which fragment to replace.
 
@@ -170,10 +207,62 @@ def find_replacement(fragments, bio_dic, non_bio_dic):
     swap_fragment[f'old_{fragment_types[random_replace]}'] = fragment_smi[random_replace]
 
     if fragment_types[random_replace] == 'bio':
-        new_fragment_name = random.choice(list(bio_dic.keys()))
+        old_fragment_connon = Chem.CanonSmiles(fragment_smi[random_replace])
+        #pick a random new fragment but it cannot be the same as the old one
+        new_fragment_name = random.choice([k for k, v in bio_dic.items() if Chem.CanonSmiles(v) != old_fragment_connon])
         swap_fragment['new_bio'] = bio_dic[new_fragment_name]
     else:
-        new_fragment_name = random.choice(list(non_bio_dic.keys()))
+        old_fragment_connon = Chem.CanonSmiles(fragment_smi[random_replace])
+        #pick a random new fragment but it cannot be the same as the old one
+        new_fragment_name = random.choice([k for k, v in non_bio_dic.items() if Chem.CanonSmiles(v) != old_fragment_connon])
         swap_fragment['new_non_bio'] = non_bio_dic[new_fragment_name]
 
     return swap_fragment
+
+def replace_fragment(new_fragment, old_fragment, fragments):
+    """
+    Replaces a fragment in a list of fragments with a new fragment.
+
+    Parameters
+    ----------
+    new_fragment (str): The new fragment to replace the old fragment.
+    old_fragment (str): The old fragment to be replaced.
+    fragments (list): The list of fragments to be modified.
+
+    Returns
+    -------
+    list: A list of SMILES strings representing the fragments with the old fragment replaced by the new fragment.
+
+    Notes
+    -----
+    - The function identifies the fragment to be replaced and the fragment to be kept.
+    - The new fragment is modified to include an attachment point.
+    - The function combines the constant fragment and the new fragment with the linker to form new molecules.
+    """
+
+    # List of the fragments with one attachment point
+    fragments_one_attach = [smi for smi in fragments if smi.count('I') == 1]
+    # List of the old linker
+    linkage = [smi for smi in fragments if smi.count('I') == 2]
+    # Remove the I from the fragment
+    fragment_one = re.sub(r'\[I\]', '', fragments_one_attach[0])
+    fragment_two = re.sub(r'\[I\]', '', fragments_one_attach[1])
+
+    # Keeping fragment that is not being replaced
+    if Chem.CanonSmiles(fragment_one) != Chem.CanonSmiles(old_fragment):
+        constant_fragment = fragments_one_attach[0]
+    else:
+        constant_fragment = fragments_one_attach[1]
+
+    # Adding attachment point to new fragment
+    new_fragment_w_attach = adding_attach(new_fragment, find='[cH;^2]', get_rid='C([I])')
+
+    new_molecules = []
+
+    constant_frag_and_linker = combine_structure(constant_fragment, linkage[0])
+
+    for fragment in new_fragment_w_attach:
+        constant_frag_linker_new_frag = combine_structure(constant_frag_and_linker, fragment)
+        new_molecules.append(constant_frag_linker_new_frag)
+
+    return new_molecules
