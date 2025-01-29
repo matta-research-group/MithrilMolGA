@@ -16,6 +16,13 @@ from molecule_mutation import *
 from workflow_initial import *
 import re
 import itertools
+from rdkit.Chem.Draw import IPythonConsole
+from rdkit.Chem import rdDepictor
+rdDepictor.SetPreferCoordGen(True)
+import sys
+import os
+sys.path.append(os.path.join(os.environ['CONDA_PREFIX'],'share','RDKit','Contrib'))
+from SA_Score import sascorer
 
 
 #### Before this the pairs will have been checked to see if they already exist as a pair!!!!
@@ -23,44 +30,55 @@ import itertools
 #### This will be the part of the first box in the workflow (isolated fragment study)
 #### This will be implanted within a input of a wider snakemake workflow
 
-bio_inspired_smi = 'COC1=CC2=C(C=C1OC)NC(C(O)=O)=C2' #DHICA
+set_EG_value = 2.5 #eV of the cut off for donor-acceptor matching
 
-non_bio_inspired_smi = 'O=C(C1=C(C2=C3C=CS2)SC=C1)NC3=O' #None bio
+mol_name = '0' #will be a number
 
-bio_inspired_smi_CANON = Chem.CanonSmiles(bio_inspired_smi) #canonical SMILES
-
-non_bio_inspired_molecule_CANON = Chem.CanonSmiles(non_bio_inspired_smi) #canonical SMILES
+molecule_study = 'COC1=C(C#CC2=CC(C(NC3=O)=O)=C(C4=C3C=CS4)S2)C5=C(C=C1OC)NC(C(O)=O)=C5'
 
 monomer_df = pd.read_csv('fake_data_test/fake_data.csv') #df containing already ran monomers
 
 monomer_smi = dict(zip(monomer_df['Monomer'], monomer_df['SMILES'])) #dict of monomers and their SMILES
 
 # have these monomers been ran before so we can just extract that data?
+
+#find the linker between the monomers
+linker_type = find_linker_type(Chem.MolFromSmiles(molecule_study))
+
+#fragment the molecule
+fragmented = fragment_molecule(Chem.MolFromSmiles(molecule_study), linker_type)
+
+#One fragment system
+fragments_one_attach = [smi for smi in fragments if smi.count('I') == 1]
+    # Remove the I from the fragment
+fragment_one = re.sub(r'\[I\]', '', fragments_one_attach[0])
+fragment_two = re.sub(r'\[I\]', '', fragments_one_attach[1])
+
 data_exists = {}
 data_missing = {}
 updated_monomer_smi = {}
 for k, v in monomer_smi.items():
-    if Chem.CanonSmiles(v) == bio_inspired_smi_CANON:
+    if Chem.CanonSmiles(v) == fragment_one:
         data_exists[k] = v
     else:
-        last_key = int(list(monomer_smi.keys())[-1])
-        data_missing[f'{last_key}'] = bio_inspired_smi
-        updated_monomer_smi[f'{last_key}'] = bio_inspired_smi
+        last_key = int(list(monomer_smi.keys())[-1]) + 1 #adds to a missing dictionary and is 1 number greater than the last key
+        data_missing[f'{last_key}'] = fragment_one
+        updated_monomer_smi[f'{last_key}'] = fragment_one
 
 
 for k, v in updated_monomer_smi.items():
-    if Chem.CanonSmiles(v) == non_bio_inspired_molecule_CANON:
+    if Chem.CanonSmiles(v) == fragment_two:
         data_exists[k] = v
     else:
-        last_key = int(list(updated_monomer_smi.keys())[-1])
-        data_missing[f'{last_key}'] = non_bio_inspired_smi 
-        updated_monomer_smi[f'{last_key}'] = non_bio_inspired_smi
+        last_key = int(list(updated_monomer_smi.keys())[-1]) + 1 #adds to a missing dictionary and is 1 number greater than the last key
+        data_missing[f'{last_key}'] = fragment_two 
+        updated_monomer_smi[f'{last_key}'] = fragment_two
 
 # if the data is missing, we need to run the psi4 calculations
 
 if data_missing is not None:
     for k, v in data_missing.items():
-        run_psi4('opt', k, v, time=4, cpus=10, functional='b3lyp', basis_set='6-31g*')
+        run_psi4('opt', k, v, time=4, cpus=10, functional, basis_set) #user set parameters
 
 # Run the calculations and wait for the data to come back
 psi_homo = {}
@@ -138,3 +156,26 @@ d_a_matching_GA = pd.concat([d_a_matching_GA, new_pair_df], ignore_index=True)
 
 # Save the updated dataframe
 d_a_matching_GA.to_csv('fake_data_test/d_a_matching_GA.csv')
+
+#set value is the value that the EG needs to be below to be a good pair
+if (new_energy_gap['D_A'] <= set_EG_value) or (new_energy_gap['A_D'] <= set_EG_value):
+    # run molecule_study
+    m = Chem.MolFromSmiles(molecule_study)
+    #Run synethic accessibility score
+    sa_score_val = sascorer.calculateScore(m)
+    #Run Psi4 calculations; planarity and energy gap
+    run_psi4('opt', mol_name, molecule_study, time=4, cpus=10, functional, basis_set) #user set parameters
+    #wait for file
+    wait_for_file(file_path, sleep_time=110, timeout=10)
+    #retreave data
+    data = extract_data_from_txt(file_path)
+    #energy calcs
+    mol_homo = data['homo']
+    mol_lumo = data['lumo']
+    mol_EG = data['energy_gap']
+    #planarity data
+    mol_plan = finding_planairty_psi4(mol_name, molecule_study, linker_type, 'opt')
+    #Adds all data to a df of ran systems
+    
+else:
+    #system is a bad match and is not ran but added to the overall dataset
