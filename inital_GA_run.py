@@ -165,17 +165,6 @@ if (new_energy_gap['D_A'] <= set_EG_value) or (new_energy_gap['A_D'] <= set_EG_v
     sa_score_val = sascorer.calculateScore(m)
     #Run Psi4 calculations; planarity and energy gap
     run_psi4('opt', mol_name, molecule_study, time=4, cpus=10, functional, basis_set) #user set parameters
-    #wait for file
-    wait_for_file(file_path, sleep_time=110, timeout=10)
-    #retreave data
-    data = extract_data_from_txt(file_path)
-    #energy calcs
-    mol_homo = data['homo']
-    mol_lumo = data['lumo']
-    mol_EG = data['energy_gap']
-    #planarity data
-    mol_plan = finding_planairty_psi4(mol_name, molecule_study, linker_type, 'opt')
-    #Adds all data to a df of ran systems
-    #adds dtata to dataframe
+    #Adds the mole_name and smiles string to a dataframe. This will need to have locking involved
 else:
     #system is a bad match and is not ran but added to the overall dataset
