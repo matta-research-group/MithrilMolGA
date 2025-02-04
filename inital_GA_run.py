@@ -176,6 +176,6 @@ if (new_energy_gap['D_A'] <= set_EG_value) or (new_energy_gap['A_D'] <= set_EG_v
     #planarity data
     mol_plan = finding_planairty_psi4(mol_name, molecule_study, linker_type, 'opt')
     #Adds all data to a df of ran systems
-    
+    #adds dtata to dataframe
 else:
     #system is a bad match and is not ran but added to the overall dataset
