@@ -160,9 +160,6 @@ d_a_matching_GA.to_csv('fake_data_test/d_a_matching_GA.csv')
 #set value is the value that the EG needs to be below to be a good pair
 if (new_energy_gap['D_A'] <= set_EG_value) or (new_energy_gap['A_D'] <= set_EG_value):
     # run molecule_study
-    m = Chem.MolFromSmiles(molecule_study)
-    #Run synethic accessibility score
-    sa_score_val = sascorer.calculateScore(m)
     #Run Psi4 calculations; planarity and energy gap
     run_psi4('opt', mol_name, molecule_study, time=4, cpus=10, functional, basis_set) #user set parameters
     #Adds the mole_name and smiles string to a dataframe. This will need to have locking involved
