@@ -56,7 +56,7 @@ def is_file_present(file_path):
 
     return 'Success'
 
-def process_tasks_trial(tasks, sleep_time=10):
+def calculations_status(tasks, sleep_time=10):
     """
     Processes a list of tasks, moving on to the next task and coming back to unfinished tasks later.
 
