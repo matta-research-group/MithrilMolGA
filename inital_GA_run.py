@@ -13,7 +13,7 @@ from QCflow.write_psi4 import *
 from QCflow.run_psi4 import *
 from QCflow.energy_calculations import *
 from molecule_mutation import *
-from workflow_initial import *
+from calculation_status import *
 import re
 import itertools
 from rdkit.Chem.Draw import IPythonConsole
