@@ -86,8 +86,5 @@ run_x_df.insert(5, 'Planarity', planarity_dict.values())
 run_x_df.insert(6, 'SA Score', SA_score_dict.values())
 
 
-
-
-
 run_x_df.to_csv(f'run_{X}_data.csv', index=False)
 save_dictionary(f'failed_molecules, failed_molecules_run_{X}.json')
