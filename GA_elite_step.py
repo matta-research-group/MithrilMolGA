@@ -29,3 +29,6 @@ from SA_Score import sascorer
 #Can definitely be all done within a few psi4 calculations rather than the gaussian splitting across multiple files
 #Retreave reorganisation data
 #Make a new df with the reorganisation data and then combine with old elite 25% from previous step and then sort again
+
+#load molecule df
+molecule_df = pd.read_csv(f'run_{X}_data.csv')

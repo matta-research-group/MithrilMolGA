@@ -30,11 +30,9 @@ from SA_Score import sascorer
 # Once all the data has been extracted they will be ordered into an elitism step
 # With the top 25% undergo reorganisation calculations
 
-#load molecule df
-molecule_df = pd.read_csv('fake_molecules_df.csv')
 
 #dict of molecules and their SMILES
-ran_molecules = dict(zip(molecule_df['Name'], molecule_df['SMILES']))
+ran_molecules = open_dictionary(f'ran_{x}_molecules.json')
 
 #turn into a list of tasks that calculation_status function can proccess
 task_list = []
