@@ -77,7 +77,6 @@ for k, v in potential_molecules.items():
 
 d_a_matching_df = pd.DataFrame()
 
-
 d_a_matching_df.insert(0, 'Name', potential_molecules.keys())
 d_a_matching_df.insert(1, 'SMILES', potential_molecules.values())
 d_a_matching_df.insert(2, 'Donor', donor_smiles.values())
