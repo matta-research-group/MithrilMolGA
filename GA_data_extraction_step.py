@@ -4,6 +4,7 @@ from rdkit.Chem import Draw
 from rdkit.Chem import AllChem
 import numpy as np
 import pandas as pd
+import argparse
 import QCflow
 from QCflow.load_gaussian import *
 from QCflow.torsion_parser import *
@@ -30,9 +31,26 @@ from SA_Score import sascorer
 # Once all the data has been extracted they will be ordered into an elitism step
 # With the top 25% undergo reorganisation calculations
 
+options = {
+    'run_num': {'default': 0},
+}
+
+
+# Create a parser for the arguments that can be changed by the user
+parser = argparse.ArgumentParser()
+for arg, opts in options.items():
+    parser.add_argument(f'--{arg}', type=type(opts['default']), default=opts['default'])
+args = parser.parse_args()
+
+# Store run_num as a string as it is mainly used for naming/retreaving files
+if hasattr(args, 'run_num') and args.run_num:
+    run_num_str = str(args.run_num)
+else:
+    run_num_str = str(options['run_num']['default'])
+
 
 #dict of molecules and their SMILES
-ran_molecules = open_dictionary(f'ran_{x}_molecules.json')
+ran_molecules = open_dictionary(f'ran_{run_num_str}_molecules.json')
 
 #turn into a list of tasks that calculation_status function can proccess
 task_list = []
@@ -84,5 +102,5 @@ run_x_df.insert(5, 'Planarity', planarity_dict.values())
 run_x_df.insert(6, 'SA Score', SA_score_dict.values())
 
 
-run_x_df.to_csv(f'run_{X}_data.csv', index=False)
-save_dictionary(f'failed_molecules, failed_molecules_run_{X}.json')
+run_x_df.to_csv(f'run_{run_num_str}_data.csv', index=False)
+save_dictionary(f'failed_molecules, failed_molecules_run_{run_num_str}.json')
