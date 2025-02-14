@@ -13,6 +13,7 @@ from QCflow.run_psi4 import *
 from QCflow.energy_calculations import *
 from molecule_mutation import *
 from calculation_status import *
+import random
 
 #Mutate the elite molecules
 #Includes new fragments, new linkers and even a whole new molecules
@@ -34,3 +35,23 @@ all_ran_smi = dict(zip(all_ran_df['Name'], all_ran_df['SMILES']))
 #Will have to determine which is the linker
 #Have 4 possible choices and then pick at random between those choices
 #Carry out the choice and then check if it has been done before, if so do again until new one found
+
+new_study_molecules = {}
+for k, v in elite_25_smi.items():
+    #options to mutate
+    choices = ['new_mol', 'new_bio', 'new_non_bio', 'new_linker']
+    #which random one is chosen for this molecule
+    selected_choice = random.choices(choices, k=1)[0]
+
+    if selected_choice == 'new_mol':
+        #do this
+        #make a new molecule that does not have either fragment in it
+    if selected_choice == 'new_bio':
+        #do this
+        #find the biofragment and replace it with a new biofragment
+    if selected_choice == 'new_non_bio':
+        #do this
+        #find the non-biofragment and replace it with a new non-biofragment
+    if selected_choice == 'new_linker':
+        #do this
+        #find the linker and replace it with a new linker that is not the same as old one

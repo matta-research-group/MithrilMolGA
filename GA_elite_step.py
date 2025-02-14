@@ -13,6 +13,7 @@ from QCflow.run_psi4 import *
 from QCflow.energy_calculations import *
 from molecule_mutation import *
 from calculation_status import *
+import argparse
 
 #Open the data df
 #Sort top EG, top Plan, top SA
@@ -22,15 +23,40 @@ from calculation_status import *
 #Make a new df with the reorganisation data and then combine with old elite 25% from previous step and then sort again
 
 #The user inputted weighting of the different parameters calculated
-EG_rank_weight = 1
-planarity_rank_weight = 1
-SA_rank_weight = 4
-elite_value = 25
-anioinc_reorg_rank_weight = 0.5 #worth more in weight than rest
-cationic_reorg_rank_weight = 0.5 #worth more in weight than rest
+
+# Define default variables
+options = {
+    'run_num': {'default': 0},
+    'EG_rank_weight': {'default': 1},
+    'planarity_rank_weight': {'default': 1},
+    'SA_rank_weight': {'default': 4},
+    'elite_value': {'default': 25},
+    'anioinc_reorg_rank_weight': {'default': 0.5},
+    'cationic_reorg_rank_weight': {'default': 0.5},
+}
+
+# Create a parser for the arguments that can be changed by the user
+parser = argparse.ArgumentParser()
+for arg, opts in options.items():
+    parser.add_argument(f'--{arg}', type=type(opts['default']), default=opts['default'])
+args = parser.parse_args()
+
+# Store run_num as a string as it is mainly used for naming/retreaving files
+if hasattr(args, 'run_num') and args.run_num:
+    run_num_str = str(args.run_num)
+else:
+    run_num_str = str(options['run_num']['default'])
+
+# Store other variables and allow for them to be over written by the user
+EG_rank_weight = args.EG_rank_weight if hasattr(args, 'EG_rank_weight') else options['EG_rank_weight']['default']
+planarity_rank_weight = args.planarity_rank_weight if hasattr(args, 'planarity_rank_weight') else options['planarity_rank_weight']['default']
+SA_rank_weight = args.SA_rank_weight if hasattr(args, 'SA_rank_weight') else options['SA_rank_weight']['default']
+elite_value = args.elite_value if hasattr(args, 'elite_value') else options['elite_value']['default']
+anioinc_reorg_rank_weight = args.anioinc_reorg_rank_weight if hasattr(args, 'anioinc_reorg_rank_weight') else options['anioinc_reorg_rank_weight']['default']
+cationic_reorg_rank_weight = args.cationic_reorg_rank_weight if hasattr(args, 'cationic_reorg_rank_weight') else options['cationic_reorg_rank_weight']['default']
 
 #load molecule df
-molecule_df = pd.read_csv(f'run_{X}_data.csv')
+molecule_df = pd.read_csv(f'run_{run_num_str}_data.csv')
 
 
 molecule_df['EG Rank Order'] = molecule_df['Energy Gap'].rank(ascending=True)
@@ -44,15 +70,15 @@ molecule_df['Rank Sum'] = (molecule_df['EG Rank Order']/EG_rank_weight) + (molec
 sorted_molecule_df = molecule_df.sort_values(['Rank Sum'], ascending=True)
 
 #retreave the elite 25% of the molecules
-elite_25 = sorted_df.head(int(len(sorted_df)*(elite_value/100)))
+elite_df = sorted_df.head(int(len(sorted_df)*(elite_value/100)))
 
 #dict of elite 25 monomers and their SMILES
-elite_25_smi = dict(zip(elite_25['Name'], elite_25['SMILES']))
+elite_smi = dict(zip(elite_df['Name'], elite_df['SMILES']))
 
 # run reorganisation calucltions for elite 25%
 # THE psi4 scripts have not been written for these yet
 # The opt_c and opt_a will also hav to contain the n_c_geo and n_a_geo as those calucltions rely off the coordinates of the optimised geometry
-for k, v in elite_25_smi.items():
+for k, v in elite_smi.items():
     run_psi4('opt_c', k, v, time=4, cpus=10, functional, basis_set) #user set parameters
     run_psi4('opt_a', k, v, time=4, cpus=10, functional, basis_set) 
     run_psi4('sp_c', k, v, time=4, cpus=10, functional, basis_set) 
@@ -96,59 +122,59 @@ for k, v in succesful_dict.items():
     reorganisation_cationic[k] = cation_reorg
 
 #create dataframe of elite 25% with reorganmsaition energy
-elite_25_df = elite_25.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Rank Sum'], axis=1)
-elite_25_df.insert(7, 'Anionic Reorganisation Energy /eV', reorganisation_anionic.values())
-elite_25_df.insert(8, 'Cationic Reorganisation Energy /eV', reorganisation_cationic.values())
+elite_df = elite_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Rank Sum'], axis=1)
+elite_df.insert(7, 'Anionic Reorganisation Energy /eV', reorganisation_anionic.values())
+elite_df.insert(8, 'Cationic Reorganisation Energy /eV', reorganisation_cationic.values())
 
 #combine old elite 25% with new elite 25% and then sort again
-old_elite_25_df = pd.read_csv(f'elite_25_run_{X-1}_df.csv') #previous elite 25% dataframe
+run_num_float = float(run_num_str)
+previous_run_num = str(run_num_float - 1)
+old_elite_df = pd.read_csv(f'elite_run_{previous_run_num}_df.csv') #previous elite 25% dataframe
 
 #combine the two dataframes
-combined_elite_25_df = pd.concat([old_elite_25_df, elite_25_df])
+combined_elite_df = pd.concat([old_elite_df, elite_df])
 
 #sort the combined dataframe
-combined_elite_25_df['EG Rank Order'] = combined_elite_25_df['Energy Gap'].rank(ascending=True)
-combined_elite_25_df['Plan Rank Order'] = combined_elite_25_df['Planarity'].rank(ascending=False)
-combined_elite_25_df['SA Rank Order'] = combined_elite_25_df['SA Score'].rank(ascending=True)
-combined_elite_25_df['Anionic Reorg Rank Order'] = combined_elite_25_df['Anionic Reorganisation Energy /eV'].rank(ascending=True)
-combined_elite_25_df['Cationic Reorg Rank Order'] = combined_elite_25_df['Cationic Reorganisation Energy /eV'].rank(ascending=True)
+combined_elite_df['EG Rank Order'] = combined_elite_df['Energy Gap'].rank(ascending=True)
+combined_elite_df['Plan Rank Order'] = combined_elite_df['Planarity'].rank(ascending=False)
+combined_elite_df['SA Rank Order'] = combined_elite_df['SA Score'].rank(ascending=True)
+combined_elite_df['Anionic Reorg Rank Order'] = combined_elite_df['Anionic Reorganisation Energy /eV'].rank(ascending=True)
+combined_elite_df['Cationic Reorg Rank Order'] = combined_elite_df['Cationic Reorganisation Energy /eV'].rank(ascending=True)
 
 #good at anioinc reorganisation energy
-combined_elite_25_df['Rank Sum Anionic'] = (combined_elite_25_df['EG Rank Order']/EG_rank_weight) + (combined_elite_25_df['Plan Rank Order']/planarity_rank_weight) + (combined_elite_25_df['SA Rank Order']/SA_rank_weight) + (combined_elite_25_df['Anionic Reorg Rank Order']/anioinc_reorg_rank_weight)
+combined_elite_df['Rank Sum Anionic'] = (combined_elite_df['EG Rank Order']/EG_rank_weight) + (combined_elite_df['Plan Rank Order']/planarity_rank_weight) + (combined_elite_df['SA Rank Order']/SA_rank_weight) + (combined_elite_df['Anionic Reorg Rank Order']/anioinc_reorg_rank_weight)
 #good at cationic reorganisation energy
-combined_elite_25_df['Rank Sum Cationic'] = (combined_elite_25_df['EG Rank Order']/EG_rank_weight) + (combined_elite_25_df['Plan Rank Order']/planarity_rank_weight) + (combined_elite_25_df['SA Rank Order']/SA_rank_weight) + (molecucombined_elite_25_dfle_df['Cationic Reorg Rank Order']/cationic_reorg_rank_weight)
+combined_elite_df['Rank Sum Cationic'] = (combined_elite_df['EG Rank Order']/EG_rank_weight) + (combined_elite_df['Plan Rank Order']/planarity_rank_weight) + (combined_elite_df['SA Rank Order']/SA_rank_weight) + (combined_elite_df['Cationic Reorg Rank Order']/cationic_reorg_rank_weight)
 
 #rank the anionic reorganisation energy molecules
-sorted_anionic_reorg_df = combined_elite_25_df.sort_values(['Rank Sum Anionic'], ascending=True)
+sorted_anionic_reorg_df = combined_elite_df.sort_values(['Rank Sum Anionic'], ascending=True)
 #rank the cationic reorganisation energy molecules
-sorted_cationic_reorg_df = combined_elite_25_df.sort_values(['Rank Sum Cationic'], ascending=True)
+sorted_cationic_reorg_df = combined_elite_df.sort_values(['Rank Sum Cationic'], ascending=True)
 
 #retreave the elite 25% of the molecules
-elite_25_anionic = sorted_anionic_reorg_df.head(int(len(sorted_anionic_reorg_df)*(elite_value/100)))
-elite_25_cationic = sorted_cationic_reorg_df.head(int(len(sorted_cationic_reorg_df)*(elite_value/100)))
+elite_anionic = sorted_anionic_reorg_df.head(int(len(sorted_anionic_reorg_df)*(elite_value/100)))
+elite_cationic = sorted_cationic_reorg_df.head(int(len(sorted_cationic_reorg_df)*(elite_value/100)))
 
-new_elite_25_df = pd.concat([elite_25_anionic, elite_25_cationic])
-new_elite_25_df = new_elite_25_df.drop_duplicates()
+new_elite_df = pd.concat([elite_anionic, elite_cationic])
+new_elite_df = new_elite_df.drop_duplicates()
 
 #similarity comparison
-old_elite_25_smi = dict(zip(old_elite_25_df['Name'], old_elite_25_df['SMILES']))
-new_elite_25_smi = dict(zip(new_elite_25_df['Name'], new_elite_25_df['SMILES']))
+old_elite_smi = dict(zip(old_elite_df['Name'], old_elite_df['SMILES']))
+new_elite_smi = dict(zip(new_elite_df['Name'], new_elite_df['SMILES']))
 
 same_as_old = {}
-for k1, v1 in old_elite_25_smi.items():
-    for k2, v2 in new_elite_25_smi.items():
+for k1, v1 in old_elite_smi.items():
+    for k2, v2 in new_elite_smi.items():
         if Chem.CanonSmiles(v1) == Chem.CanonSmiles(v2):
             same_as_old[k2] = v2
 
-length_of_old = len(old_elite_25_smi)
+length_of_old = len(old_elite_smi)
 length_of_same = len(same_as_old)
 
 #how similar in percentage are the two elite 25% lists
 similarity_percentage = (length_of_same/length_of_old)*100
 
-run_number = X+1
-
-similarity_percentage_dic = {f'Run {run_number}': similarity_percentage}
+similarity_percentage_dic = {f'Run {run_number_str}': similarity_percentage}
 
 current_run_df = pd.DataFrame()
 current_run_df.insert(0, 'Name', similarity_percentage_dic.keys())
@@ -160,8 +186,8 @@ run_df_combined = pd.concat([run_df, current_run_df])
 run_df_combined.to_csv(f'run_df.csv', index=False)
 
 #save new elite dataframe without the scoring
-new_elite_25_df = new_elite_25_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Rank Sum', 'Anionic Reorg Rank Order', 'Cationic Reorg Rank Order', 'Rank Sum Anionic', 'Rank Sum Cationic'], axis=1)
-new_elite_25_df.to_csv(f'elite_25_run_{run_number}_df.csv', index=False)
+new_elite_df = new_elite_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Rank Sum', 'Anionic Reorg Rank Order', 'Cationic Reorg Rank Order', 'Rank Sum Anionic', 'Rank Sum Cationic'], axis=1)
+new_elite_df.to_csv(f'elite_run_{run_number_str}_df.csv', index=False)
 
 #combine all the runs into one big dataframe
 all_ran_molecules = pd.read_csv(f'ran_all_data.csv')
