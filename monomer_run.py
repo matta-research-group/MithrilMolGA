@@ -16,6 +16,7 @@ from molecule_mutation import *
 from calculation_status import *
 import re
 import itertools
+import argparse
 
 # All monomers have to be CanonSmiles for retrieval from dataframes
 # This file takes all the molecules that want to be run
@@ -28,8 +29,25 @@ import itertools
 
 #FILE NAMES ARE ONLY PLACEHOLDERS AT THIS STAGE
 
+options = {
+    'run_num': {'default': 0},
+}
+
+# Create a parser for the arguments that can be changed by the user
+parser = argparse.ArgumentParser()
+for arg, opts in options.items():
+    parser.add_argument(f'--{arg}', type=type(opts['default']), default=opts['default'])
+args = parser.parse_args()
+
+# Store run_num as a string as it is mainly used for naming/retreaving files
+if hasattr(args, 'run_num') and args.run_num:
+    run_num_str = str(args.run_num)
+else:
+    run_num_str = str(options['run_num']['default'])
+
+
 #load molecules to run
-potential_molecules = open_dictionary('molecules_to_run.json')
+potential_molecules = open_dictionary(f'molecules_to_run_{run_num_str}.json')
 
 #load monomer df
 monomer_df = pd.read_csv('monomer_df.csv')
@@ -129,5 +147,5 @@ df_concat = pd.concat([monomer_df, run_monomer_x_df], ignore_index=True)
 
 #override the old monomer dataframe with the new one with the data
 df_concat.to_csv(f'monomer_df.csv', index=False)
-save_dictionary(f'failed_monomers, failed_monomers_run_{X}.json')
+save_dictionary(f'failed_monomers, failed_monomers_run_{run_num_str}.json')
     
