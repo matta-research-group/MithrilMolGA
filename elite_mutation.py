@@ -22,9 +22,9 @@ import random
 # 25% are new molecules, 25% have 1 biofragment fragment change, 25% non-biofragment change, 25% linker change
 
 #load the elite df
-elite_25 = pd.read_csv(f'elite_25_run_{run_number}_df.csv')
+elite_df = pd.read_csv(f'elite_25_run_{run_number}_df.csv')
 #get th smi strings of the eilte_25
-elite_25_smi = dict(zip(elite_25['Name'], elite_25['SMILES']))
+elite_smi = dict(zip(elite_25['Name'], elite_25['SMILES']))
 #load all the molecules that have ever been ran in the GA
 all_ran_df = pd.read_csv(f'ran_all_data.csv')
 #get th nams and smiles so that the script does not produce duplicate molecules
@@ -37,7 +37,7 @@ all_ran_smi = dict(zip(all_ran_df['Name'], all_ran_df['SMILES']))
 #Carry out the choice and then check if it has been done before, if so do again until new one found
 
 new_study_molecules = {}
-for k, v in elite_25_smi.items():
+for k, v in elite_smi.items():
     #options to mutate
     choices = ['new_mol', 'new_bio', 'new_non_bio', 'new_linker']
     #which random one is chosen for this molecule

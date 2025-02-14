@@ -22,8 +22,38 @@ import itertools
 # If the donor acceptor matching is good then it runs the molecule
 # If the donor acceptor matching does not reach the threshold it is added to a failed list
 
+options = {
+    'run_num': {'default': 0},
+    'set_EG_value': {'default': 3.2},
+    'functional' : {'default': 'b3lyp'},
+    'basis_set' : {'default': '6-31g*'},
+    'time' : {'default': 6},
+    'cpus' : {'default': 10}
+}
+
+
+# Create a parser for the arguments that can be changed by the user
+parser = argparse.ArgumentParser()
+for arg, opts in options.items():
+    parser.add_argument(f'--{arg}', type=type(opts['default']), default=opts['default'])
+args = parser.parse_args()
+
+# Store run_num as a string as it is mainly used for naming/retreaving files
+if hasattr(args, 'run_num') and args.run_num:
+    run_num_str = str(args.run_num)
+else:
+    run_num_str = str(options['run_num']['default'])
+
+# Store other variables and allow for them to be over written by the user
+set_EG_value = args.set_EG_value if hasattr(args, 'set_EG_value') else options['set_EG_value']['default']
+functional = args.functional if hasattr(args, 'functional') else options['functional']['default']
+basis_set = args.basis_set if hasattr(args, 'basis_set') else options['basis_set']['default']
+time = args.time if hasattr(args, 'time') else options['time']['default']
+cpus = args.cpus if hasattr(args, 'cpus') else options['cpus']['default']
+
+
 #load molecules to run
-potential_molecules = open_dictionary('molecules_to_run.json')
+potential_molecules = open_dictionary(f'molecules_to_run_{run_num_str}.json')
 
 monomer_df = pd.read_csv('monomer_df.csv') #df containing already ran monomers
 
@@ -71,7 +101,7 @@ for k, v in potential_molecules.items():
         # run molecule_study
         #Run Psi4 calculations; planarity and energy gap
         ran_molecules[k] = v
-        run_psi4('opt', mol_name, molecule_study, time=4, cpus=10, functional, basis_set) #user set parameters
+        run_psi4('opt', mol_name, molecule_study, time, cpus, functional, basis_set) #user set parameters
     else:
         failed_D_A_match[k] = v
 
@@ -90,5 +120,5 @@ d_a_df_concat = pd.concat([d_a_df, d_a_matching_df], ignore_index=True)
 
 d_a_df_concat.to_csv('d_a_df.csv', index=False)
 
-save_dictionary(ran_molecules, f'ran_{x}_molecules.json')
-save_dictionary(failed_D_A_match, f'failed_D_A_match_{x}_molecules.json')
+save_dictionary(ran_molecules, f'ran_{run_num_str}_molecules.json')
+save_dictionary(failed_D_A_match, f'failed_D_A_match_{run_num_str}_molecules.json')

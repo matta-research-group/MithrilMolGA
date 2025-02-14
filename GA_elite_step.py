@@ -33,6 +33,10 @@ options = {
     'elite_value': {'default': 25},
     'anioinc_reorg_rank_weight': {'default': 0.5},
     'cationic_reorg_rank_weight': {'default': 0.5},
+    'functional' : {'default': 'b3lyp'},
+    'basis_set' : {'default': '6-31g*'},
+    'time' : {'default': 4},
+    'cpus' : {'default': 10}
 }
 
 # Create a parser for the arguments that can be changed by the user
@@ -54,6 +58,10 @@ SA_rank_weight = args.SA_rank_weight if hasattr(args, 'SA_rank_weight') else opt
 elite_value = args.elite_value if hasattr(args, 'elite_value') else options['elite_value']['default']
 anioinc_reorg_rank_weight = args.anioinc_reorg_rank_weight if hasattr(args, 'anioinc_reorg_rank_weight') else options['anioinc_reorg_rank_weight']['default']
 cationic_reorg_rank_weight = args.cationic_reorg_rank_weight if hasattr(args, 'cationic_reorg_rank_weight') else options['cationic_reorg_rank_weight']['default']
+functional = args.functional if hasattr(args, 'functional') else options['functional']['default']
+basis_set = args.basis_set if hasattr(args, 'basis_set') else options['basis_set']['default']
+time = args.time if hasattr(args, 'time') else options['time']['default']
+cpus = args.cpus if hasattr(args, 'cpus') else options['cpus']['default']
 
 #load molecule df
 molecule_df = pd.read_csv(f'run_{run_num_str}_data.csv')
@@ -79,10 +87,10 @@ elite_smi = dict(zip(elite_df['Name'], elite_df['SMILES']))
 # THE psi4 scripts have not been written for these yet
 # The opt_c and opt_a will also hav to contain the n_c_geo and n_a_geo as those calucltions rely off the coordinates of the optimised geometry
 for k, v in elite_smi.items():
-    run_psi4('opt_c', k, v, time=4, cpus=10, functional, basis_set) #user set parameters
-    run_psi4('opt_a', k, v, time=4, cpus=10, functional, basis_set) 
-    run_psi4('sp_c', k, v, time=4, cpus=10, functional, basis_set) 
-    run_psi4('sp_a', k, v, time=4, cpus=10, functional, basis_set)
+    run_psi4('opt_c', k, v, time, cpus, functional, basis_set) #user set parameters
+    run_psi4('opt_a', k, v, time, cpus, functional, basis_set) 
+    run_psi4('sp_c', k, v, time, cpus, functional, basis_set) 
+    run_psi4('sp_a', k, v, time, cpus, functional, basis_set)
 
 #turn into a list of tasks that calculation_status function can proccess
 task_list = []

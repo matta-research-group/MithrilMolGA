@@ -31,7 +31,13 @@ import argparse
 
 options = {
     'run_num': {'default': 0},
+    'set_EG_value': {'default': 3.2},
+    'functional' : {'default': 'b3lyp'},
+    'basis_set' : {'default': '6-31g*'},
+    'time' : {'default': 4},
+    'cpus' : {'default': 10}
 }
+
 
 # Create a parser for the arguments that can be changed by the user
 parser = argparse.ArgumentParser()
@@ -44,6 +50,13 @@ if hasattr(args, 'run_num') and args.run_num:
     run_num_str = str(args.run_num)
 else:
     run_num_str = str(options['run_num']['default'])
+
+# Store other variables and allow for them to be over written by the user
+set_EG_value = args.set_EG_value if hasattr(args, 'set_EG_value') else options['set_EG_value']['default']
+functional = args.functional if hasattr(args, 'functional') else options['functional']['default']
+basis_set = args.basis_set if hasattr(args, 'basis_set') else options['basis_set']['default']
+time = args.time if hasattr(args, 'time') else options['time']['default']
+cpus = args.cpus if hasattr(args, 'cpus') else options['cpus']['default']
 
 
 #load molecules to run
@@ -96,7 +109,7 @@ for k1, v1 in molecules_monomers.items():
 # if the data is missing, we need to run the psi4 calculations
 if molecules_to_run is not None:
     for k, v in molecules_to_run.items():
-        run_psi4('opt', k, v, time=4, cpus=10, functional, basis_set) #user set parameters
+        run_psi4('opt', k, v, time, cpus, functional, basis_set) #user set parameters
 
 # Run the calculations and wait for the data to come back
 #turn into a list of tasks that calculation_status function can proccess
