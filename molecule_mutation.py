@@ -161,15 +161,16 @@ def replace_linker(fragments, linker_dic):
     return frag_linker_frag
 
 
-def find_replacement_fragment(fragments, bio_dic, non_bio_dic):
+def find_replacement_fragment(fragments, bio_dic, non_bio_dic, fragment_replace):
     """
-    Randomly chooses which fragment to replace.
+     Chooses which fragment to replace.
 
     Parameters
     ----------
     fragments (list): The list of fragmented molecule SMILES strings.
     bio_dic (dict): The dictionary of bio-inspired fragments.
     non_bio_dic (dict): The dictionary of non-bio-inspired fragments.
+    fragment_replace (str): The type of fragment to replace. Possible values are 'bio' or 'non_bio'
 
     Returns
     -------
@@ -266,3 +267,96 @@ def replace_fragment(new_fragment, old_fragment, fragments):
         new_molecules.append(constant_frag_linker_new_frag)
 
     return new_molecules
+
+
+def swap_one_fragment(mol_smi, bio_dic, non_bio_dic, fragment_replace):
+    """
+    Replaces one of the fragments depending on the users input.
+
+    Parameters
+    ----------
+    fragments (list): The list of fragmented molecule SMILES strings.
+    bio_dic (dict): The dictionary of bio-inspired fragments.
+    non_bio_dic (dict): The dictionary of non-bio-inspired fragments.
+    fragment_replace (str): The type of fragment to replace. Possible values are 'bio' or 'non_bio'
+
+    Returns
+    -------
+    str: smi str of the new molecule.
+    """
+    #find the linker type
+    linker_type = find_linker_type(Chem.MolFromSmiles(mol_smi))
+    #fragment the molecule
+    fragments = fragment_molecule(Chem.MolFromSmiles(mol_smi), linker_type)
+    # List of the fragments with one attachment point
+    fragments_one_attach = [smi for smi in fragments if smi.count('I') == 1]
+    # List of the old linker
+    linkage = [smi for smi in fragments if smi.count('I') == 2]
+    # Remove the I from the fragment
+    fragment_one = re.sub(r'\[I\]', '', fragments_one_attach[0])
+    fragment_two = re.sub(r'\[I\]', '', fragments_one_attach[1])
+
+    # Compare fragments to bio_dictionary and non-bio_dictionary
+    fragment_one_type = []
+    for k1, v1 in bio_dic.items():
+        match_found = False
+        if Chem.CanonSmiles(v1) == Chem.CanonSmiles(fragments_one_attach[0]):
+            match_found = True
+            fragment_one_type.append('bio')
+            break
+
+    fragment_two_type = []
+    for k1, v1 in bio_dic.items():
+        match_found = False
+        if Chem.CanonSmiles(v1) == Chem.CanonSmiles(fragments_one_attach[1]):
+            match_found = True
+            fragment_two_type.append('bio')
+            break
+    
+    replaced_smi = []
+    if fragment_replace == 'bio':
+        if fragment_one_type[0] == 'bio':
+            replaced_smi.append(fragments_one_attach[0])
+            random_key = random.choice(list(bio_dic.keys()))
+            random_value = bio_dic[random_key]
+            while Chem.CanonSmiles(random_value) == Chem.CanonSmiles(fragments_one_attach[0]): #cannot be the same fragmeant over and over again
+                random_key = random.choice(list(bio_dic.keys()))
+                random_value = bio_dic[random_key]
+        else:
+            replaced_smi.append(fragments_one_attach[1])
+            random_key = random.choice(list(bio_dic.keys()))
+            random_value = bio_dic[random_key]
+            while Chem.CanonSmiles(random_value) == Chem.CanonSmiles(fragments_one_attach[1]): #cannot be the same fragmeant over and over again
+                random_key = random.choice(list(bio_dic.keys()))
+                random_value = bio_dic[random_key]
+
+    if fragment_replace == 'non_bio':
+        if not fragment_one_type:
+            replaced_smi.append(fragments_one_attach[0])
+            random_key = random.choice(list(non_bio_dic.keys()))
+            random_value = non_bio_dic[random_key]
+            while Chem.CanonSmiles(random_value) == Chem.CanonSmiles(fragments_one_attach[0]): #cannot be the same fragmeant over and over again
+                random_key = random.choice(list(non_bio_dic.keys()))
+                random_value = non_bio_dic[random_key]
+        else:
+            replaced_smi.append(fragments_one_attach[1])
+            random_key = random.choice(list(non_bio_dic.keys()))
+            random_value = non_bio_dic[random_key]
+            while Chem.CanonSmiles(random_value) == Chem.CanonSmiles(fragments_one_attach[1]): #cannot be the same fragmeant over and over again
+                random_key = random.choice(list(non_bio_dic.keys()))
+                random_value = non_bio_dic[random_key]
+
+    if Chem.CanonSmiles(replaced_smi[0]) == Chem.CanonSmiles(fragments_one_attach[0]):
+        new_fragment = combine_structure(linkage[0], fragments_one_attach[1])
+        new_molecule = combine_structure(new_fragment, random_value)
+        #new_fragment = fragments_one_attach[1]
+        #new_fragment_2 = random_value
+        #new_linker = linkage
+    else:
+        new_fragment = combine_structure(linkage[0], fragments_one_attach[0])
+        new_molecule = combine_structure(new_fragment, random_value)
+        #new_fragment = fragments_one_attach[0]
+        #new_fragment_2 = random_value
+        #new_linker = linkage
+
+    return new_molecule

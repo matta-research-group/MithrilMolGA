@@ -47,11 +47,37 @@ for k, v in elite_smi.items():
         #do this
         #make a new molecule that does not have either fragment in it
     if selected_choice == 'new_bio':
-        #do this
         #find the biofragment and replace it with a new biofragment
+        new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'bio')
+        while Chem.CanonSmiles(new_molecule) in all_ran_smi.values():
+            new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'bio')
+        
+        last_key, last_value = list(all_ran_smi.items())[-1]
+        #updates what the key will be by turning to int and then back to str
+        make_num = int(last_key) + 1
+        #creates the new name for the molecule
+        make_num_str = str(make_num)
+        #updates the new molecules list
+        new_study_molecules[make_num_str] = new_molecule
+        #updates the ran dictionary so no overlap occures
+        all_ran_smi[make_num_str] = new_molecule
+
     if selected_choice == 'new_non_bio':
         #do this
         #find the non-biofragment and replace it with a new non-biofragment
+        new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'non_bio')
+        while Chem.CanonSmiles(new_molecule) in all_ran_smi.values():
+            new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'non_bio')
+        
+        last_key, last_value = list(all_ran_smi.items())[-1]
+        #updates what the key will be by turning to int and then back to str
+        make_num = int(last_key) + 1
+        #creates the new name for the molecule
+        make_num_str = str(make_num)
+        #updates the new molecules list
+        new_study_molecules[make_num_str] = new_molecule
+        #updates the ran dictionary so no overlap occures
+        all_ran_smi[make_num_str] = new_molecule
     if selected_choice == 'new_linker':
         #do this
         #find the linker and replace it with a new linker that is not the same as old one

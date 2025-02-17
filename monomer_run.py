@@ -92,9 +92,8 @@ for k1, v1 in molecules_monomers.items():
     for k2, v2 in monomer_already_run.items():
         if Chem.CanonSmiles(v1) == Chem.CanonSmiles(v2):
             match_found = True
+            print(f'{k1}: Match found')
             break
-    if match_found:
-        print(f'{k1}: Match found')
     else:
         #gets the last key and value from the ran monomer dictionary
         last_key, last_value = list(monomer_already_run.items())[-1]
