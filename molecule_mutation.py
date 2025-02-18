@@ -44,6 +44,32 @@ def find_linker_type(mol):
         if mol.HasSubstructMatch(Chem.MolFromSmarts(v)):
             return k
 
+def find_fragment_type(mol_smi, bio_dic):
+    """
+    Determines the type of a molecular fragment based on its SMILES representation.
+    Parameters
+    ----------
+    mol_smi (str): The SMILES string of the molecule to be classified.
+    bio_dic (dict): A dictionary where keys are identifiers and values are SMILES strings of known bio fragments.
+
+    Returns
+    -------
+    str: 'bio' if the molecule matches any SMILES in bio_dic, otherwise 'non_bio'.
+    """
+
+    fragment_one_type = []
+    for k1, v1 in bio_dic.items():
+        match_found = False
+        if Chem.CanonSmiles(v1) == Chem.CanonSmiles(mol_smi):
+            match_found = True
+            fragment_one_type.append('bio')
+            break
+    
+    if not fragment_one_type:
+        fragment_one_type.append('non_bio')
+
+    return fragment_one_type[0]
+
 def fragment_molecule(mol, linker):
     """
     Fragments a molecule at specified linker bonds and returns the SMILES representation of the fragments.
@@ -297,25 +323,12 @@ def swap_one_fragment(mol_smi, bio_dic, non_bio_dic, fragment_replace):
     fragment_two = re.sub(r'\[I\]', '', fragments_one_attach[1])
 
     # Compare fragments to bio_dictionary and non-bio_dictionary
-    fragment_one_type = []
-    for k1, v1 in bio_dic.items():
-        match_found = False
-        if Chem.CanonSmiles(v1) == Chem.CanonSmiles(fragments_one_attach[0]):
-            match_found = True
-            fragment_one_type.append('bio')
-            break
-
-    fragment_two_type = []
-    for k1, v1 in bio_dic.items():
-        match_found = False
-        if Chem.CanonSmiles(v1) == Chem.CanonSmiles(fragments_one_attach[1]):
-            match_found = True
-            fragment_two_type.append('bio')
-            break
+    fragment_one_type = find_fragment_type(fragments_one_attach[0], bio_dic)
+    fragment_two_type = find_fragment_type(fragments_one_attach[1], bio_dic)
     
     replaced_smi = []
     if fragment_replace == 'bio':
-        if fragment_one_type[0] == 'bio':
+        if fragment_one_type == 'bio':
             replaced_smi.append(fragments_one_attach[0])
             random_key = random.choice(list(bio_dic.keys()))
             random_value = bio_dic[random_key]
@@ -331,7 +344,7 @@ def swap_one_fragment(mol_smi, bio_dic, non_bio_dic, fragment_replace):
                 random_value = bio_dic[random_key]
 
     if fragment_replace == 'non_bio':
-        if not fragment_one_type:
+        if fragment_one_type == 'non_bio':
             replaced_smi.append(fragments_one_attach[0])
             random_key = random.choice(list(non_bio_dic.keys()))
             random_value = non_bio_dic[random_key]
