@@ -23,3 +23,4 @@ def single_run(run_number, functional='b3lyp', basis_set='6-31g*',
                     f"--planarity_rank_weight={planarity_rank_weight}", f"--SA_rank_weight={SA_rank_weight}", 
                     f"--elite_value={elite_value}", f"--anioinc_reorg_rank_weight={anioinc_reorg_rank_weight}", 
                     f"--cationic_reorg_rank_weight={cationic_reorg_rank_weight}"])  # does elite ordering, submits reorganisation calculation
+

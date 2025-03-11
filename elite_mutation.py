@@ -30,14 +30,10 @@ all_ran_df = pd.read_csv(f'ran_all_data.csv')
 #get th nams and smiles so that the script does not produce duplicate molecules
 all_ran_smi = dict(zip(all_ran_df['Name'], all_ran_df['SMILES']))
 
+all_ran_smi_canon = {k: Chem.CanonSmiles(v) for k, v in all_ran_smi.items()}
+
 #linker_dic
 linker_dic = open_dictionary('linker_dic.json')
-
-#Will have to determine which is the bioinspired fragment
-#If more than one and the just randomly pick between the two to replace with a new bioinspired fragment
-#Will have to determine which is the linker
-#Have 4 possible choices and then pick at random between those choices
-#Carry out the choice and then check if it has been done before, if so do again until new one found
 
 new_study_molecules = {}
 for k, v in elite_smi.items():
@@ -52,12 +48,12 @@ for k, v in elite_smi.items():
 
         #swap the bio fragment
         new_molecule_new_bio = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'bio')
-        while Chem.CanonSmiles(new_molecule_new_bio) in all_ran_smi.values():
+        while Chem.CanonSmiles(new_molecule_new_bio) in all_ran_smi_canon.values():
             new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'bio')
 
         #swap the non-bio fragment
         new_molecule_new_non_bio_and_bio = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'non_bio')
-        while Chem.CanonSmiles(new_molecule_new_non_bio_and_bio) in all_ran_smi.values():
+        while Chem.CanonSmiles(new_molecule_new_non_bio_and_bio) in all_ran_smi_canon.values():
             new_molecule_new_non_bio_and_bio = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'non_bio')
 
         #swap the linker
@@ -67,7 +63,7 @@ for k, v in elite_smi.items():
         #replace the linker
         replaced_linker = replace_linker(fragments, linker_dic)
 
-        last_key, last_value = list(all_ran_smi.items())[-1]
+        last_key, last_value = list(all_ran_smi_canon.items())[-1]
         #updates what the key will be by turning to int and then back to str
         make_num = int(last_key) + 1
         #creates the new name for the molecule
@@ -81,10 +77,10 @@ for k, v in elite_smi.items():
     if selected_choice == 'new_bio':
         #find the biofragment and replace it with a new biofragment
         new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'bio')
-        while Chem.CanonSmiles(new_molecule) in all_ran_smi.values():
+        while Chem.CanonSmiles(new_molecule) in all_ran_smi_canon.values():
             new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'bio')
         
-        last_key, last_value = list(all_ran_smi.items())[-1]
+        last_key, last_value = list(all_ran_smi_canon.items())[-1]
         #updates what the key will be by turning to int and then back to str
         make_num = int(last_key) + 1
         #creates the new name for the molecule
@@ -99,10 +95,10 @@ for k, v in elite_smi.items():
         #do this
         #find the non-biofragment and replace it with a new non-biofragment
         new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'non_bio')
-        while Chem.CanonSmiles(new_molecule) in all_ran_smi.values():
+        while Chem.CanonSmiles(new_molecule) in all_ran_smi_canon.values():
             new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'non_bio')
         
-        last_key, last_value = list(all_ran_smi.items())[-1]
+        last_key, last_value = list(all_ran_smi_canon.items())[-1]
         #updates what the key will be by turning to int and then back to str
         make_num = int(last_key) + 1
         #creates the new name for the molecule
@@ -111,6 +107,7 @@ for k, v in elite_smi.items():
         new_study_molecules[make_num_str] = new_molecule
         #updates the ran dictionary so no overlap occures
         all_ran_smi[make_num_str] = new_molecule
+
     if selected_choice == 'new_linker':
         #do this
         #find the linker and replace it with a new linker that is not the same as old one
@@ -121,7 +118,7 @@ for k, v in elite_smi.items():
         #replace the linker
         replaced_linker = replace_linker(fragments, linker_dic)
 
-        last_key, last_value = list(all_ran_smi.items())[-1]
+        last_key, last_value = list(all_ran_smi_canon.items())[-1]
         #updates what the key will be by turning to int and then back to str
         make_num = int(last_key) + 1
         #creates the new name for the molecule

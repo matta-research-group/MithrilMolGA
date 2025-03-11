@@ -95,15 +95,19 @@ for k, v in elite_smi.items():
 #turn into a list of tasks that calculation_status function can proccess
 task_list = []
 for k, v in ran_molecules.items():
-    task_opt_c = lambda: is_file_present(f'{k}_opt_c.txt')
-    task_opt_a = lambda: is_file_present(f'{k}_opt_a.txt')
-    task_sp_c = lambda: is_file_present(f'{k}_sp_c.txt')
-    task_sp_a = lambda: is_file_present(f'{k}_sp_a.txt')
+    task_opt_c = lambda: is_file_present(f'{k}_opt_c_energy_and_gap.txt')
+    task_opt_a = lambda: is_file_present(f'{k}_opt_a_energy_and_gap.txt')
+    task_sp_c = lambda: is_file_present(f'{k}_sp_c_energy_and_gap.txt')
+    task_sp_a = lambda: is_file_present(f'{k}_sp_a_energy_and_gap.txt')
+    task_n_c_geo = lambda: is_file_present(f'{k}_n_c_geo_energy_and_gap.txt')
+    task_n_a_geo = lambda: is_file_present(f'{k}_n_a_geo_energy_and_gap.txt')
     #add all the tasks to the task list
     task_list.append((k, task_opt_c))
     task_list.append((k, task_opt_a))
     task_list.append((k, task_sp_c))
     task_list.append((k, task_sp_a))
+    task_list.append((k, task_n_c_geo))
+    task_list.append((k, task_n_a_geo))
 
 #returns the failed and successful calculations, keeps looping until all calculations are done
 succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_time=15)
@@ -117,14 +121,16 @@ reorganisation_anionic = {}
 reorganisation_cationic = {}
 for k, v in succesful_dict.items():
     #extract data from the successful monomers
-    data_opt = extract_data_from_txt(f'{k}_opt.txt')
-    data_opt_c = extract_data_from_txt(f'{k}_opt_c.txt')
-    data_opt_a = extract_data_from_txt(f'{k}_opt_a.txt')
-    data_sp_c = extract_data_from_txt(f'{k}_sp_c.txt')
-    data_sp_a = extract_data_from_txt(f'{k}_sp_a.txt')
+    data_opt = extract_data_from_txt(f'{k}_opt_energy_and_gap.txt')
+    data_opt_c = extract_data_from_txt(f'{k}_opt_c_energy_and_gap.txt')
+    data_opt_a = extract_data_from_txt(f'{k}_opt_a_energy_and_gap.txt')
+    data_sp_c = extract_data_from_txt(f'{k}_sp_c_energy_and_gap.txt')
+    data_sp_a = extract_data_from_txt(f'{k}_sp_a_energy_and_gap.txt')
+    data_n_c_geo = extract_data_from_txt(f'{k}_n_c_geo_energy_and_gap.txt')
+    data_n_a_geo = extract_data_from_txt(f'{k}_n_a_geo_energy_and_gap.txt')
     #energy calcs
-    cation_reorg = cal_reorg(data_opt['energy'],data_sp_c['energy'],data_opt_c['energy_opt_c'],n_c_geo['energy_n_c_geo'])
-    anion_reorg = cal_reorg(data_opt['energy'],data_sp_a['energy'],data_opt_a['energy_opt_a'],n_c_geo['energy_n_a_geo'])
+    cation_reorg = cal_reorg(data_opt, data_sp_c, data_opt_c, data_n_c_geo, calculation_software='Psi4')
+    anion_reorg = cal_reorg(data_opt, data_sp_a, data_opt_a, data_n_a_geo, calculation_software='Psi4')
 
     reorganisation_anionic[k] = anion_reorg
     reorganisation_cationic[k] = cation_reorg
