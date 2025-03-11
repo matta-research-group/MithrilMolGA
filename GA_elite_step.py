@@ -87,14 +87,14 @@ elite_smi = dict(zip(elite_df['Name'], elite_df['SMILES']))
 # THE psi4 scripts have not been written for these yet
 # The opt_c and opt_a will also hav to contain the n_c_geo and n_a_geo as those calucltions rely off the coordinates of the optimised geometry
 for k, v in elite_smi.items():
-    run_psi4('opt_c', k, v, time, cpus, functional, basis_set) #user set parameters
-    run_psi4('opt_a', k, v, time, cpus, functional, basis_set) 
+    run_psi4('anion', k, v, time, cpus, functional, basis_set) #user set parameters
+    run_psi4('cation', k, v, time, cpus, functional, basis_set) 
     run_psi4('sp_c', k, v, time, cpus, functional, basis_set) 
     run_psi4('sp_a', k, v, time, cpus, functional, basis_set)
 
 #turn into a list of tasks that calculation_status function can proccess
 task_list = []
-for k, v in ran_molecules.items():
+for k, v in elite_smi.items():
     task_opt_c = lambda: is_file_present(f'{k}_opt_c_energy_and_gap.txt')
     task_opt_a = lambda: is_file_present(f'{k}_opt_a_energy_and_gap.txt')
     task_sp_c = lambda: is_file_present(f'{k}_sp_c_energy_and_gap.txt')
@@ -114,7 +114,7 @@ succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_tim
 
 failed_molecules = {}
 for k, v in failed_dict.items():
-    failed_molecules[k] = elite_25_smi[k]
+    failed_molecules[k] = elite_smi[k]
 
 #How this data is extracted needs to be determined by psi4 input but this is sudo code as follows
 reorganisation_anionic = {}
@@ -188,7 +188,7 @@ length_of_same = len(same_as_old)
 #how similar in percentage are the two elite 25% lists
 similarity_percentage = (length_of_same/length_of_old)*100
 
-similarity_percentage_dic = {f'Run {run_number_str}': similarity_percentage}
+similarity_percentage_dic = {f'Run {run_num_str}': similarity_percentage}
 
 current_run_df = pd.DataFrame()
 current_run_df.insert(0, 'Name', similarity_percentage_dic.keys())
@@ -201,10 +201,11 @@ run_df_combined.to_csv(f'run_df.csv', index=False)
 
 #save new elite dataframe without the scoring
 new_elite_df = new_elite_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Rank Sum', 'Anionic Reorg Rank Order', 'Cationic Reorg Rank Order', 'Rank Sum Anionic', 'Rank Sum Cationic'], axis=1)
-new_elite_df.to_csv(f'elite_run_{run_number_str}_df.csv', index=False)
+new_elite_df.to_csv(f'elite_run_{run_num_str}_df.csv', index=False)
 
 #combine all the runs into one big dataframe
 all_ran_molecules = pd.read_csv(f'ran_all_data.csv')
 
-adding_new_runs = pd.concat([all_ran_molecules, molecule_df])
-adding_new_runs.to_csv(f'ran_all_data.csv', index=False)
+adding_new_runs = pd.concat([all_ran_molecules, molecule_df, elite_df])
+adding_new_runs_no_dup = adding_new_runs.drop_duplicates()
+adding_new_runs_no_dup.to_csv(f'ran_all_data.csv', index=False)

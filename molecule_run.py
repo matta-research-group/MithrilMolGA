@@ -101,7 +101,7 @@ for k, v in potential_molecules.items():
         # run molecule_study
         #Run Psi4 calculations; planarity and energy gap
         ran_molecules[k] = v
-        run_psi4('opt', mol_name, molecule_study, time, cpus, functional, basis_set) #user set parameters
+        run_psi4('opt', k, v, time, cpus, functional, basis_set) #user set parameters
     else:
         failed_D_A_match[k] = v
 

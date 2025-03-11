@@ -207,20 +207,22 @@ def find_replacement_fragment(fragments, bio_dic, non_bio_dic, fragment_replace)
     # List of the old linker
     linkage = [smi for smi in fragments if smi.count('I') == 2]
     # Remove the I from the fragment
-    fragment_one = re.sub(r'\[I\]', '', fragments_one_attach[0])
-    fragment_two = re.sub(r'\[I\]', '', fragments_one_attach[1])
+    #fragment_one = re.sub(r'\[I\]', '', fragments_one_attach[0])
+    #fragment_two = re.sub(r'\[I\]', '', fragments_one_attach[1])
+    fragment_one = re.sub(fragments_one_attach[0])
+    fragment_two = re.sub(fragments_one_attach[1])
 
     # Compare fragments to bio_dictionary and non-bio_dictionary
     fragment_types = {}
     fragment_smi = {}
-    if find_first_match(fragment_one, bio_dic) == 'True':
+    if find_fragment_type(fragment_one, bio_dic) == 'True':
         fragment_types['fragment_one'] = 'bio'
         fragment_smi['fragment_one'] = fragment_one
     else:
         fragment_types['fragment_one'] = 'non_bio'
         fragment_smi['fragment_one'] = fragment_one
     
-    if find_first_match(fragment_two, bio_dic) == 'True':
+    if find_fragment_type(fragment_two, bio_dic) == 'True':
         fragment_types['fragment_two'] = 'bio'
         fragment_smi['fragment_two'] = fragment_two
     else:

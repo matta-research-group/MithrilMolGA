@@ -14,6 +14,26 @@ from QCflow.energy_calculations import *
 from molecule_mutation import *
 from calculation_status import *
 import random
+import argparse
+
+# Define default variables
+options = {
+    'run_num': {'default': 0}
+}
+
+# Create a parser for the arguments that can be changed by the user
+parser = argparse.ArgumentParser()
+for arg, opts in options.items():
+    parser.add_argument(f'--{arg}', type=type(opts['default']), default=opts['default'])
+args = parser.parse_args()
+
+# Store run_num as a string as it is mainly used for naming/retreaving files
+if hasattr(args, 'run_num') and args.run_num:
+    run_num_str = str(args.run_num)
+else:
+    run_num_str = str(options['run_num']['default'])
+
+
 
 #Mutate the elite molecules
 #Includes new fragments, new linkers and even a whole new molecules
@@ -22,9 +42,9 @@ import random
 # 25% are new molecules, 25% have 1 biofragment fragment change, 25% non-biofragment change, 25% linker change
 
 #load the elite df
-elite_df = pd.read_csv(f'elite_25_run_{run_number}_df.csv')
+elite_df = pd.read_csv(f'elite_run_{run_num_str}_df.csv')
 #get th smi strings of the eilte_25
-elite_smi = dict(zip(elite_25['Name'], elite_25['SMILES']))
+elite_smi = dict(zip(elite_df['Name'], elite_df['SMILES']))
 #load all the molecules that have ever been ran in the GA
 all_ran_df = pd.read_csv(f'ran_all_data.csv')
 #get th nams and smiles so that the script does not produce duplicate molecules
@@ -34,6 +54,10 @@ all_ran_smi_canon = {k: Chem.CanonSmiles(v) for k, v in all_ran_smi.items()}
 
 #linker_dic
 linker_dic = open_dictionary('linker_dic.json')
+#bio_dic
+bio_dic = open_dictionary('bio_dic.json')
+#non_bio_dic
+non_bio_dic = open_dictionary('non_bio_dic.json')
 
 new_study_molecules = {}
 for k, v in elite_smi.items():
@@ -47,14 +71,14 @@ for k, v in elite_smi.items():
         #make a new molecule that does not have either fragment in it
 
         #swap the bio fragment
-        new_molecule_new_bio = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'bio')
+        new_molecule_new_bio = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
         while Chem.CanonSmiles(new_molecule_new_bio) in all_ran_smi_canon.values():
-            new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'bio')
+            new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
 
         #swap the non-bio fragment
-        new_molecule_new_non_bio_and_bio = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'non_bio')
+        new_molecule_new_non_bio_and_bio = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
         while Chem.CanonSmiles(new_molecule_new_non_bio_and_bio) in all_ran_smi_canon.values():
-            new_molecule_new_non_bio_and_bio = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'non_bio')
+            new_molecule_new_non_bio_and_bio = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
 
         #swap the linker
         linker_type = find_linker_type(Chem.MolFromSmiles(new_molecule_new_non_bio_and_bio))
@@ -76,9 +100,9 @@ for k, v in elite_smi.items():
         
     if selected_choice == 'new_bio':
         #find the biofragment and replace it with a new biofragment
-        new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'bio')
+        new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
         while Chem.CanonSmiles(new_molecule) in all_ran_smi_canon.values():
-            new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'bio')
+            new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
         
         last_key, last_value = list(all_ran_smi_canon.items())[-1]
         #updates what the key will be by turning to int and then back to str
@@ -94,9 +118,9 @@ for k, v in elite_smi.items():
     if selected_choice == 'new_non_bio':
         #do this
         #find the non-biofragment and replace it with a new non-biofragment
-        new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'non_bio')
+        new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
         while Chem.CanonSmiles(new_molecule) in all_ran_smi_canon.values():
-            new_molecule = swap_one_fragment(mol_smi, bio_dic, non_bio_dic, 'non_bio')
+            new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
         
         last_key, last_value = list(all_ran_smi_canon.items())[-1]
         #updates what the key will be by turning to int and then back to str
@@ -128,4 +152,4 @@ for k, v in elite_smi.items():
         #updates the ran dictionary so no overlap occures
         all_ran_smi[make_num_str] = replaced_linker
 
-save_dictionary(new_study_molecules, f'new_study_molecules_{run_number}.json')
+save_dictionary(new_study_molecules, f'new_study_molecules_{run_num_str}.json')

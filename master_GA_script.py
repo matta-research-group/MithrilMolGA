@@ -23,4 +23,14 @@ def single_run(run_number, functional='b3lyp', basis_set='6-31g*',
                     f"--planarity_rank_weight={planarity_rank_weight}", f"--SA_rank_weight={SA_rank_weight}", 
                     f"--elite_value={elite_value}", f"--anioinc_reorg_rank_weight={anioinc_reorg_rank_weight}", 
                     f"--cationic_reorg_rank_weight={cationic_reorg_rank_weight}"])  # does elite ordering, submits reorganisation calculation
+    
+    subprocess.run(["python", "elite_mutation.py", f"--run_num={run_number}"])  # extracts data and updates a df
 
+
+#run a test loop
+
+for i in range(1, 11):
+    single_run(i, functional='b3lyp', basis_set='6-31g*', 
+               time=8, number_of_cpus=10, EG_cutoff=3.2, 
+               EG_rank_weight=1, planarity_rank_weight=1, SA_rank_weight=4,
+               elite_value=50, anioinc_reorg_rank_weight=0.5, cationic_reorg_rank_weight=0.5)
