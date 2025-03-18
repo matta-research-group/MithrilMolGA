@@ -59,3 +59,4 @@ When the GA is submitted a `GA_status.txt` file is created. This file tracks whe
 - Add the time to the `GA_status.txt` file so the user can see if it is stuck in a loop
 - Adapt so to work with a workflow manager as need to be able to run for more than 2 days
 - Change from pandas to polars for dataframes
+- Add documentation
