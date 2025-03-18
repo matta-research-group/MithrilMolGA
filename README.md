@@ -4,15 +4,6 @@ Code base of the genetic algorithm project
 ## Notes
 This contains the scripts that will be used within the GA. Alot of the file names are currently just place holders.
 
-## Dataframes
-run_df.csv is the dataframe containing the similarity results of each run. This is used to calculate the average similarity of each run.
-
-elite_25_run_{run_number}_df.csv contains the yop 25% for a specific run. 
-
-ran_all_data.csv contains the data for all the runs. This is to keep track of every molecule that has been studied to avoid duplictes.
-
-run_{X}_data.csv just contains the data for molecules in the current run.
-
 ## Scripts
 `monomer_run.py` this takes all the potential molecules, checks if the monomers have been run and if they haven't it runs them
 
@@ -20,12 +11,45 @@ run_{X}_data.csv just contains the data for molecules in the current run.
 
 `GA_data_extraction_step.py` extracts the data from the molecule run step, this runs in th background and waits for all the molecules to finish
 
-`GA_elite_step.py` ranks all the molecules in the current run, takes th top 25% runs reorganisation energy calculations on them. Combines the top 25% with the old 25% and then reranks and records the similarity to the old one.
+`GA_elite_step.py` ranks all the molecules in the current run, takes the top X% runs reorganisation energy calculations on them. Combines the top X% with the old X% and then reranks and records the similarity to the old one.
 
-`mutation_of_elite.py` pending
+`mutation_of_elite.py` This step mutates the elite molecules be either changing the bio, non-bio or the linker. It then creates new molecules so that the amount of molecules for the next run matches the amount used in the previous run
 
-## Function scripts
+`master_GA_script.py` This script overseas and runs all the previous scripts and is what is submitted to CREATE. This houses all the user defined parameters and is what should be adjusted by the user if they want certain filter parameters.
+
+## Function Scripts
 
 `calculation_status.py` - monitors the calculation
 
 `molecule_mutaion.py` - functions to mutate molecules
+
+## DataFrames and Dictionaries
+
+`run_df.csv` - contains the similarity results of each run
+
+`d_a_df.csv` - contains the D-A matching results
+
+`monomer_df.csv` - contains data for all the monomers ran
+
+`ran_all_data.csv` - contains data for all the molecules ran
+
+`elite_run_0_df.csv` - empty df to start the GA
+
+`bio_dic.json` - dictionary of all the bio monomers with attachment points denoted by `I`
+
+`non_bio_dic.json` - dictionary of all the non-bio monomers with attachment points denoted by `I`
+
+`linker_dic.json` - dictionary of all the linkers with attachment points denoted by `I`
+
+`molecule_to_run_1.json` - dictionary of all molecules to run for the first run of the GA
+
+## Progress Checking
+
+When the GA is submitted a `GA_status.txt` file is created. This file tracks when each script has been successful completed and shows for which run it is completed for. This is helpful for the user to know where the GA is currently at.
+
+## Future Work
+
+- Add a function to check similarity and to finish the GA if there is continued similarity
+- Add the time to the `GA_status.txt` file so the user can see if it is stuck in a loop
+- Adapt so to work with a workflow manager as need to be able to run for more than 2 days
+- Change from pandas to polars for dataframes
