@@ -98,12 +98,13 @@ for k1, v1 in molecules_monomers.items():
         #gets the last key and value from the ran monomer dictionary
         last_key, last_value = list(monomer_already_run.items())[-1]
         #updates what the key will be by turning to int and then back to str
-        make_num = int(last_key) + 1
+        make_num = int(last_key.split('_')[0]) + 1
         make_num_str = str(make_num)
+        make_mono_str = f'{make_num_str}_m'
         #updates a new dictionary of monomers to run
-        molecules_to_run[make_num_str] = v1
+        molecules_to_run[make_mono_str] = v1
         #updates the ran dictionary so no overlap occures
-        monomer_already_run[make_num_str] = v1
+        monomer_already_run[make_mono_str] = v1
 
 # if the data is missing, we need to run the psi4 calculations
 if molecules_to_run is not None:
@@ -114,11 +115,11 @@ if molecules_to_run is not None:
 #turn into a list of tasks that calculation_status function can proccess
 task_list = []
 for k, v in molecules_to_run.items():
-    task = lambda: is_file_present(f'{k}_opt.txt')
-    task_list.append((k, task))
+    task = lambda: is_file_present(f'{k}/{k}_opt_energy_and_gap.txt')
+    task_list.append((k, task()))
 
 #returns the failed and successful calculations, keeps looping until all calculations are done
-succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_time=15)
+succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_time=1)
 
 #add failed monomers to a new dictionary
 failed_monomers = {}
@@ -130,6 +131,7 @@ HOMO_dict = {}
 LUMO_dict = {}
 EG_dict = {}
 for k, v in succesful_dict.items():
+    file_path = f'{k}/{k}_opt_energy_and_gap.txt'
 
     data = extract_data_from_txt(file_path)
     #energy calcs
@@ -144,9 +146,9 @@ for k, v in succesful_dict.items():
 
 succesful_dict_CanonSmiles = {}
 for k, v in succesful_dict.items():
-    succesful_dict_CanonSmiles[k] = Chem.CanonSmiles(v)
+    succesful_dict_CanonSmiles[k] = Chem.CanonSmiles(molecules_to_run[k])
 #make a new dataframe with the new monomers data
-run_monomer_x_df = pd.DatFrame()
+run_monomer_x_df = pd.DataFrame()
 
 run_monomer_x_df.insert(0, 'Name', succesful_dict_CanonSmiles.keys())
 run_monomer_x_df.insert(1, 'SMILES', succesful_dict_CanonSmiles.values())
@@ -159,5 +161,11 @@ df_concat = pd.concat([monomer_df, run_monomer_x_df], ignore_index=True)
 
 #override the old monomer dataframe with the new one with the data
 df_concat.to_csv(f'monomer_df.csv', index=False)
-save_dictionary(f'failed_monomers, failed_monomers_run_{run_num_str}.json')
-    
+failed_monomers_file_name = f'failed_monomers_run_{run_num_str}.json'
+save_dictionary(failed_monomers, failed_monomers_file_name)
+
+progress_file_path = 'GA_status.txt'
+
+# Open the file in append mode and write some content
+with open(progress_file_path, 'a') as file:
+    file.write(f'monomer_run complete for run {run_num_str}.\n')

@@ -46,11 +46,9 @@ elite_df = pd.read_csv(f'elite_run_{run_num_str}_df.csv')
 #get th smi strings of the eilte_25
 elite_smi = dict(zip(elite_df['Name'], elite_df['SMILES']))
 #load all the molecules that have ever been ran in the GA
-all_ran_df = pd.read_csv(f'ran_all_data.csv')
-#get th nams and smiles so that the script does not produce duplicate molecules
-all_ran_smi = dict(zip(all_ran_df['Name'], all_ran_df['SMILES']))
+all_ran_molecules_dic = open_dictionary('total_molecules_ran.json')
 
-all_ran_smi_canon = {k: Chem.CanonSmiles(v) for k, v in all_ran_smi.items()}
+all_ran_smi_canon = {k: Chem.CanonSmiles(v) for k, v in all_ran_molecules_dic.items()}
 
 #linker_dic
 linker_dic = open_dictionary('linker_dic.json')
@@ -62,42 +60,10 @@ non_bio_dic = open_dictionary('non_bio_dic.json')
 new_study_molecules = {}
 for k, v in elite_smi.items():
     #options to mutate
-    choices = ['new_mol', 'new_bio', 'new_non_bio', 'new_linker']
+    choices = ['new_bio', 'new_non_bio', 'new_linker']
     #which random one is chosen for this molecule
     selected_choice = random.choices(choices, k=1)[0]
 
-    if selected_choice == 'new_mol':
-        #do this
-        #make a new molecule that does not have either fragment in it
-
-        #swap the bio fragment
-        new_molecule_new_bio = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
-        while Chem.CanonSmiles(new_molecule_new_bio) in all_ran_smi_canon.values():
-            new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
-
-        #swap the non-bio fragment
-        new_molecule_new_non_bio_and_bio = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
-        while Chem.CanonSmiles(new_molecule_new_non_bio_and_bio) in all_ran_smi_canon.values():
-            new_molecule_new_non_bio_and_bio = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
-
-        #swap the linker
-        linker_type = find_linker_type(Chem.MolFromSmiles(new_molecule_new_non_bio_and_bio))
-        #fragment the molecule
-        fragments = fragment_molecule(Chem.MolFromSmiles(new_molecule_new_non_bio_and_bio), linker_type)
-        #replace the linker
-        replaced_linker = replace_linker(fragments, linker_dic)
-
-        last_key, last_value = list(all_ran_smi_canon.items())[-1]
-        #updates what the key will be by turning to int and then back to str
-        make_num = int(last_key) + 1
-        #creates the new name for the molecule
-        make_num_str = str(make_num)
-        #updates the new molecules list
-        new_study_molecules[make_num_str] = replaced_linker
-        #updates the ran dictionary so no overlap occures
-        all_ran_smi[make_num_str] = replaced_linker
-
-        
     if selected_choice == 'new_bio':
         #find the biofragment and replace it with a new biofragment
         new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
@@ -152,4 +118,97 @@ for k, v in elite_smi.items():
         #updates the ran dictionary so no overlap occures
         all_ran_smi[make_num_str] = replaced_linker
 
-save_dictionary(new_study_molecules, f'new_study_molecules_{run_num_str}.json')
+#make a new list of molecules to run and make it same length as the molecule ran in list
+current_run = open_dictionary(f'molecules_to_run_{run_num_str}.json')
+length_of_run = len(current_run)
+length_of_new_run = len(new_study_molecules)
+new_molecules_needed = length_of_run - length_of_new_run
+
+#new molecules to make up the numbers lost via elite step
+new_molecules = {}
+for i in range(new_molecules_needed + 1):
+    
+    #pick a random linker
+    random_linker_type = random.choice(list(linker_dic.keys()))
+    random_linker = linker_dic[random_linker_type]
+
+    #pick a random bio fragment
+    random_bio = random.choice(list(bio_dic.keys()))
+    fragment_1 = bio_dic[random_bio]
+
+    #pick at random if the second fragment will be bio or non_bio
+    weights = [0.25, 0.75]  # 70% chance for option1, 30% chance for option2
+    choices = ['bio', 'non_bio']
+    selected_choice = random.choices(choices, weights=weights, k=1)[0]
+    if selected_choice == 'bio':
+        random_bio_2 = random.choice(list(bio_dic.keys()))
+        fragment_2 = bio_dic[random_bio_2]
+
+    if selected_choice == 'non_bio':
+        random_non_bio = random.choice(list(non_bio_dic.keys()))
+        fragment_2 = non_bio_dic[random_non_bio]
+
+    #connect them all together
+    frag_1_and_linker = combine_structure(fragment_1, random_linker)
+    final_mol = combine_structure(frag_1_and_linker, fragment_2)
+
+    #make sure its a molecule that hasn't been ran before
+    while Chem.CanonSmiles(final_mol) in all_ran_smi_canon.values():
+        #pick a random linker
+        random_linker_type = random.choice(list(linker_dic.keys()))
+        random_linker = linker_dic[random_linker_type]
+
+        #pick a random bio fragment
+        random_bio = random.choice(list(bio_dic.keys()))
+        fragment_1 = bio_dic[random_bio]
+
+        #pick at random if the second fragment will be bio or non_bio
+        weights = [0.25, 0.75]  # 25% chance for bio, 75% chance for non_bio
+        choices = ['bio', 'non_bio']
+        selected_choice = random.choices(choices, weights=weights, k=1)[0]
+        if selected_choice == 'bio':
+            random_bio_2 = random.choice(list(bio_dic.keys()))
+            fragment_2 = bio_dic[random_bio_2]
+
+        if selected_choice == 'non_bio':
+            random_non_bio = random.choice(list(non_bio_dic.keys()))
+            fragment_2 = non_bio_dic[random_non_bio]
+
+        #connect them all together
+        frag_1_and_linker = combine_structure(fragment_1, random_linker)
+        final_mol = combine_structure(frag_1_and_linker, fragment_2)
+
+    new_molecules[str(int(i))] = final_mol
+
+
+# Extract the last key from the reference dictionary
+last_key = list(all_ran_molecules_dic.keys())[-1]
+
+# Determine the base number from the last key
+base_number = int(last_key)
+
+# Renumber the new dictionary
+new_molecules_renumbered = {f"{base_number + 1 + i}": v for i, (k, v) in enumerate(new_molecules.items())}
+
+# Extract the last key from the reference dictionary
+last_key = list(new_molecules_renumbered.keys())[-1]
+
+# Determine the base number from the last key
+base_number = int(last_key)
+
+# Renumber the new dictionary
+renumbered_dict_mutation = {f"{base_number + 1 + i}": v for i, (k, v) in enumerate(new_study_molecules.items())}
+
+molecules_to_run = renumbered_dict | renumbered_dict_mutation
+
+run_num_int = int(run_num_str)
+new_run_num = run_num_int + 1
+new_run_num_str = str(new_run_num)
+
+save_dictionary(molecules_to_run, f'molecule_to_run_{new_run_num_str}.json')
+
+progress_file_path = 'GA_status.txt'
+
+# Open the file in append mode and write some content
+with open(progress_file_path, 'a') as file:
+    file.write(f'elite_mutation complete for run {run_num_str}.\n')

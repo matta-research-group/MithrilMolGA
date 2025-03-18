@@ -67,7 +67,7 @@ cpus = args.cpus if hasattr(args, 'cpus') else options['cpus']['default']
 molecule_df = pd.read_csv(f'run_{run_num_str}_data.csv')
 
 
-molecule_df['EG Rank Order'] = molecule_df['Energy Gap'].rank(ascending=True)
+molecule_df['EG Rank Order'] = molecule_df['EG /eV'].rank(ascending=True)
 molecule_df['Plan Rank Order'] = molecule_df['Planarity'].rank(ascending=False)
 molecule_df['SA Rank Order'] = molecule_df['SA Score'].rank(ascending=True)
 
@@ -78,7 +78,7 @@ molecule_df['Rank Sum'] = (molecule_df['EG Rank Order']/EG_rank_weight) + (molec
 sorted_molecule_df = molecule_df.sort_values(['Rank Sum'], ascending=True)
 
 #retreave the elite 25% of the molecules
-elite_df = sorted_df.head(int(len(sorted_df)*(elite_value/100)))
+elite_df = sorted_molecule_df.head(int(len(sorted_molecule_df)*(elite_value/100)))
 
 #dict of elite 25 monomers and their SMILES
 elite_smi = dict(zip(elite_df['Name'], elite_df['SMILES']))
@@ -87,47 +87,51 @@ elite_smi = dict(zip(elite_df['Name'], elite_df['SMILES']))
 # THE psi4 scripts have not been written for these yet
 # The opt_c and opt_a will also hav to contain the n_c_geo and n_a_geo as those calucltions rely off the coordinates of the optimised geometry
 for k, v in elite_smi.items():
-    run_psi4('anion', k, v, time, cpus, functional, basis_set) #user set parameters
-    run_psi4('cation', k, v, time, cpus, functional, basis_set) 
-    run_psi4('sp_c', k, v, time, cpus, functional, basis_set) 
-    run_psi4('sp_a', k, v, time, cpus, functional, basis_set)
+    run_psi4('anion', str(k), v, time, cpus, functional, basis_set) #user set parameters
+    run_psi4('cation', str(k), v, time, cpus, functional, basis_set) 
+    run_psi4('sp_c', str(k), v, time, cpus, functional, basis_set) 
+    run_psi4('sp_a', str(k), v, time, cpus, functional, basis_set)
 
 #turn into a list of tasks that calculation_status function can proccess
 task_list = []
 for k, v in elite_smi.items():
-    task_opt_c = lambda: is_file_present(f'{k}_opt_c_energy_and_gap.txt')
-    task_opt_a = lambda: is_file_present(f'{k}_opt_a_energy_and_gap.txt')
-    task_sp_c = lambda: is_file_present(f'{k}_sp_c_energy_and_gap.txt')
-    task_sp_a = lambda: is_file_present(f'{k}_sp_a_energy_and_gap.txt')
-    task_n_c_geo = lambda: is_file_present(f'{k}_n_c_geo_energy_and_gap.txt')
-    task_n_a_geo = lambda: is_file_present(f'{k}_n_a_geo_energy_and_gap.txt')
+    k = str(k)
+    task_opt_c = lambda: is_file_present(f'{k}/{k}_opt_c_energy_and_gap.txt')
+    task_opt_a = lambda: is_file_present(f'{k}/{k}_opt_a_energy_and_gap.txt')
+    task_sp_c = lambda: is_file_present(f'{k}/{k}_sp_c_energy_and_gap.txt')
+    task_sp_a = lambda: is_file_present(f'{k}/{k}_sp_a_energy_and_gap.txt')
+    task_n_c_geo = lambda: is_file_present(f'{k}/{k}_n_c_geo_energy_and_gap.txt')
+    task_n_a_geo = lambda: is_file_present(f'{k}/{k}_n_a_geo_energy_and_gap.txt')
     #add all the tasks to the task list
-    task_list.append((k, task_opt_c))
-    task_list.append((k, task_opt_a))
-    task_list.append((k, task_sp_c))
-    task_list.append((k, task_sp_a))
-    task_list.append((k, task_n_c_geo))
-    task_list.append((k, task_n_a_geo))
+    task_list.append((f'{k}_opt_c', task_opt_c()))
+    task_list.append((f'{k}_opt_a', task_opt_a()))
+    task_list.append((f'{k}_sp_c', task_sp_c()))
+    task_list.append((f'{k}_sp_a', task_sp_a()))
+    task_list.append((f'{k}_n_c_geo', task_n_c_geo()))
+    task_list.append((f'{k}_n_a_geo', task_n_a_geo()))
 
 #returns the failed and successful calculations, keeps looping until all calculations are done
-succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_time=15)
+succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_time=5)
 
 failed_molecules = {}
 for k, v in failed_dict.items():
+    k = k.split('_')[0]
     failed_molecules[k] = elite_smi[k]
+
+succesful_molecules = {k: v for k, v in elite_smi.items() if k not in failed_molecules}
 
 #How this data is extracted needs to be determined by psi4 input but this is sudo code as follows
 reorganisation_anionic = {}
 reorganisation_cationic = {}
-for k, v in succesful_dict.items():
+for k, v in succesful_molecules.items():
     #extract data from the successful monomers
-    data_opt = extract_data_from_txt(f'{k}_opt_energy_and_gap.txt')
-    data_opt_c = extract_data_from_txt(f'{k}_opt_c_energy_and_gap.txt')
-    data_opt_a = extract_data_from_txt(f'{k}_opt_a_energy_and_gap.txt')
-    data_sp_c = extract_data_from_txt(f'{k}_sp_c_energy_and_gap.txt')
-    data_sp_a = extract_data_from_txt(f'{k}_sp_a_energy_and_gap.txt')
-    data_n_c_geo = extract_data_from_txt(f'{k}_n_c_geo_energy_and_gap.txt')
-    data_n_a_geo = extract_data_from_txt(f'{k}_n_a_geo_energy_and_gap.txt')
+    data_opt = extract_data_from_txt(f'{k}/{k}_opt_energy_and_gap.txt')
+    data_opt_c = extract_data_from_txt(f'{k}/{k}_opt_c_energy_and_gap.txt')
+    data_opt_a = extract_data_from_txt(f'{k}/{k}_opt_a_energy_and_gap.txt')
+    data_sp_c = extract_data_from_txt(f'{k}/{k}_sp_c_energy_and_gap.txt')
+    data_sp_a = extract_data_from_txt(f'{k}/{k}_sp_a_energy_and_gap.txt')
+    data_n_c_geo = extract_data_from_txt(f'{k}/{k}_n_c_geo_energy_and_gap.txt')
+    data_n_a_geo = extract_data_from_txt(f'{k}/{k}_n_a_geo_energy_and_gap.txt')
     #energy calcs
     cation_reorg = cal_reorg(data_opt, data_sp_c, data_opt_c, data_n_c_geo, calculation_software='Psi4')
     anion_reorg = cal_reorg(data_opt, data_sp_a, data_opt_a, data_n_a_geo, calculation_software='Psi4')
@@ -142,14 +146,14 @@ elite_df.insert(8, 'Cationic Reorganisation Energy /eV', reorganisation_cationic
 
 #combine old elite 25% with new elite 25% and then sort again
 run_num_float = float(run_num_str)
-previous_run_num = str(run_num_float - 1)
+previous_run_num = str(int(run_num_float - 1))
 old_elite_df = pd.read_csv(f'elite_run_{previous_run_num}_df.csv') #previous elite 25% dataframe
 
 #combine the two dataframes
 combined_elite_df = pd.concat([old_elite_df, elite_df])
 
 #sort the combined dataframe
-combined_elite_df['EG Rank Order'] = combined_elite_df['Energy Gap'].rank(ascending=True)
+combined_elite_df['EG Rank Order'] = combined_elite_df['EG /eV'].rank(ascending=True)
 combined_elite_df['Plan Rank Order'] = combined_elite_df['Planarity'].rank(ascending=False)
 combined_elite_df['SA Rank Order'] = combined_elite_df['SA Score'].rank(ascending=True)
 combined_elite_df['Anionic Reorg Rank Order'] = combined_elite_df['Anionic Reorganisation Energy /eV'].rank(ascending=True)
@@ -186,7 +190,10 @@ length_of_old = len(old_elite_smi)
 length_of_same = len(same_as_old)
 
 #how similar in percentage are the two elite 25% lists
-similarity_percentage = (length_of_same/length_of_old)*100
+if length_of_old == 0 and length_of_same == 0:
+    similarity_percentage = 0
+else:
+    similarity_percentage = (length_of_same/length_of_old)*100
 
 similarity_percentage_dic = {f'Run {run_num_str}': similarity_percentage}
 
@@ -200,12 +207,29 @@ run_df_combined = pd.concat([run_df, current_run_df])
 run_df_combined.to_csv(f'run_df.csv', index=False)
 
 #save new elite dataframe without the scoring
-new_elite_df = new_elite_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Rank Sum', 'Anionic Reorg Rank Order', 'Cationic Reorg Rank Order', 'Rank Sum Anionic', 'Rank Sum Cationic'], axis=1)
+new_elite_df = new_elite_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Anionic Reorg Rank Order', 'Cationic Reorg Rank Order', 'Rank Sum Anionic', 'Rank Sum Cationic'], axis=1)
 new_elite_df.to_csv(f'elite_run_{run_num_str}_df.csv', index=False)
 
 #combine all the runs into one big dataframe
 all_ran_molecules = pd.read_csv(f'ran_all_data.csv')
 
-adding_new_runs = pd.concat([all_ran_molecules, molecule_df, elite_df])
+clean_molecule_df = molecule_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Rank Sum'], axis=1)
+
+# Create a boolean mask
+mask = clean_molecule_df['Name'].isin(elite_df['Name'])
+
+# Apply the mask to filter to remove the duplicates
+filtered_clean_molecule_df = clean_molecule_df[~mask]
+
+# Print the filtered DataFrame
+
+adding_new_runs = pd.concat([all_ran_molecules, filtered_clean_molecule_df, elite_df])
 adding_new_runs_no_dup = adding_new_runs.drop_duplicates()
 adding_new_runs_no_dup.to_csv(f'ran_all_data.csv', index=False)
+
+
+progress_file_path = 'GA_status.txt'
+
+# Open the file in append mode and write some content
+with open(progress_file_path, 'a') as file:
+    file.write(f'GA_elite_step complete for run {run_num_str}.\n')

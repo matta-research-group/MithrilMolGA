@@ -16,6 +16,7 @@ from molecule_mutation import *
 from calculation_status import *
 import re
 import itertools
+import argparse
 
 # This script runs the potential molecules
 # Its checks if the donor acceptor matching
@@ -55,9 +56,15 @@ cpus = args.cpus if hasattr(args, 'cpus') else options['cpus']['default']
 #load molecules to run
 potential_molecules = open_dictionary(f'molecules_to_run_{run_num_str}.json')
 
+total_molecules_ran = open_dictionary('total_molecules_ran.json')
+
+total_molecules = total_molecules_ran | total_molecules_ran
+
+save_dictionary(total_molecules, 'total_molecules_ran.json')
+
 monomer_df = pd.read_csv('monomer_df.csv') #df containing already ran monomers
 
-monomer_smi = dict(zip(monomer_df['Monomer'], monomer_df['SMILES'])) #dict of monomers and their SMILES
+monomer_smi = dict(zip(monomer_df['Name'], monomer_df['SMILES'])) #dict of monomers and their SMILES
 
 ran_molecules = {}
 failed_D_A_match = {}
@@ -82,11 +89,11 @@ for k, v in potential_molecules.items():
     fragment_one_df = monomer_df[monomer_df['SMILES'] == Chem.CanonSmiles(fragment_one)]
     fragment_two_df = monomer_df[monomer_df['SMILES'] == Chem.CanonSmiles(fragment_two)]
     #get values for each fragment
-    homo_fragment_one = pd.to_numeric(fragment_one_df['HOMO']).values
-    lumo_fragment_one = pd.to_numeric(fragment_one_df['LUMO']).values
+    homo_fragment_one = pd.to_numeric(fragment_one_df['HOMO /eV']).values
+    lumo_fragment_one = pd.to_numeric(fragment_one_df['LUMO /eV']).values
 
-    homo_fragment_two = pd.to_numeric(fragment_two_df['HOMO']).values
-    lumo_fragment_two = pd.to_numeric(fragment_two_df['LUMO']).values
+    homo_fragment_two = pd.to_numeric(fragment_two_df['HOMO /eV']).values
+    lumo_fragment_two = pd.to_numeric(fragment_two_df['LUMO /eV']).values
 
     #calculate the predicted energy gap
     EG_D_A = np.abs((homo_fragment_one - lumo_fragment_two)[0])
@@ -122,3 +129,9 @@ d_a_df_concat.to_csv('d_a_df.csv', index=False)
 
 save_dictionary(ran_molecules, f'ran_{run_num_str}_molecules.json')
 save_dictionary(failed_D_A_match, f'failed_D_A_match_{run_num_str}_molecules.json')
+
+progress_file_path = 'GA_status.txt'
+
+# Open the file in append mode and write some content
+with open(progress_file_path, 'a') as file:
+    file.write(f'molecule_run complete for run {run_num_str}.\n')

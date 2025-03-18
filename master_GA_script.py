@@ -1,4 +1,5 @@
 import subprocess
+import argparse
 
 def single_run(run_number, functional='b3lyp', basis_set='6-31g*', 
                time=6, number_of_cpus=10, EG_cutoff=3.2, 
@@ -31,6 +32,6 @@ def single_run(run_number, functional='b3lyp', basis_set='6-31g*',
 
 for i in range(1, 11):
     single_run(i, functional='b3lyp', basis_set='6-31g*', 
-               time=8, number_of_cpus=10, EG_cutoff=3.2, 
+               time=5, number_of_cpus=10, EG_cutoff=3.2, 
                EG_rank_weight=1, planarity_rank_weight=1, SA_rank_weight=4,
                elite_value=50, anioinc_reorg_rank_weight=0.5, cationic_reorg_rank_weight=0.5)

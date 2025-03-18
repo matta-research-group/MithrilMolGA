@@ -10,6 +10,7 @@ from QCflow.load_gaussian import *
 from QCflow.torsion_parser import *
 from QCflow.find_torsion import *
 import re
+import random
 
 def find_linker_type(mol):
     """
@@ -32,17 +33,26 @@ def find_linker_type(mol):
     ----
     The function uses SMARTS patterns to identify the linker types.
     """
+    # old thio = [R!$(*#*)&!D1]-!@[R!$(*#*)&!D1]
 
     linker_type_smarts = {
     'single' : '[R!$(*#*)&!D1]-!@[R!$(*#*)&!D1]',
     'double' : '[R!$(*#*)&!D1]C=C-!@[R!$(*#*)&!D1]',
     'imine' : '[R!$(*#*)&!D1]N=C-!@[R!$(*#*)&!D1]',
-    'thio' : '[R!$(*#*)&!D1]-!@[R!$(*#*)&!D1]',
+    'thio' : '[#6]-[#6]1:[#6]:[#6](-[#8]-[#6]):[#6](-[#6]):[#16]:1',
     'triple' : '[*R1!$(*#*)!D1]C#C-!@[*R1!$(*#*)!D1]'}
 
     for k, v in linker_type_smarts.items():
         if mol.HasSubstructMatch(Chem.MolFromSmarts(v)):
-            return k
+            linker_type =  k
+
+    if k == 'single':
+        thio_test = mol.HasSubstructMatch(Chem.MolFromSmarts(linker_type_smarts['thio']))
+        if thio_test == True:
+            linker_type = 'thio'
+
+    return linker_type
+
 
 def find_fragment_type(mol_smi, bio_dic):
     """

@@ -45,16 +45,18 @@ def is_file_present(file_path):
             'Calculation failed' if the error file is present and contains any content.
             'Waiting' if neither the file nor the error file is present.
     """
-    err_file_path = file_path.replace('.txt', '.err')
+    err_file_path = file_path.replace('_energy_and_gap.txt', '.err')
     
     while not os.path.exists(file_path):
         if os.path.exists(err_file_path):
             with open(err_file_path, 'r') as err_file:
-                if err_file.read().strip():
+                error_content = err_file.read().strip()
+                if any(word in error_content for word in ['Exception created', 'failed']):
                     return 'Calculation failed'
-        return 'Waiting'
-
+                else:
+                    return 'Waiting'
     return 'Success'
+
 
 def calculations_status(tasks, sleep_time=10):
     """
@@ -84,8 +86,11 @@ def calculations_status(tasks, sleep_time=10):
     attempts = {task_name: 0 for task_name, _ in tasks}
 
     while tasks:
-        task_name, task = tasks.pop(0)  # Get the first task
-        result = task()  # Execute the task
+        task_name = (tasks[0][0])
+        result = (tasks[0][1])
+        tasks.pop(0)  # Remove the task from the list
+        print(f'Current directory: {os.getcwd()}')
+        #result = task()  # Execute the task
         print(f' {result} {task_name} running')
 
         if result == 'Success':  # If the task is completed successfully
@@ -95,7 +100,8 @@ def calculations_status(tasks, sleep_time=10):
         elif 'Waiting' in result:
             print(f'Task {task_name} is still waiting')
             attempts[task_name] += 1
-            tasks.append((task_name, task))  # Re-add the task to the end of the list
+            task = lambda: is_file_present(f'{task_name}/{task_name}_opt_energy_and_gap.txt')
+            tasks.append((task_name, task()))  # Re-add the task to the end of the list
             print(f'Task {task_name} waiting, will retry (attempt {attempts[task_name]})')
 
         elif 'Calculation failed' in result:
@@ -103,7 +109,7 @@ def calculations_status(tasks, sleep_time=10):
             failed_dict[task_name] = 'Failed'
         else:
             data_dict[task_name] = 'In Progress'
-
+        
         print(f'sleeping for {sleep_time} seconds, end {task_name}')
         time.sleep(sleep_time)  # Sleep between each loop iteration
 
