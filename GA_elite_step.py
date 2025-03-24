@@ -33,6 +33,7 @@ options = {
     'elite_value': {'default': 25},
     'anioinc_reorg_rank_weight': {'default': 0.5},
     'cationic_reorg_rank_weight': {'default': 0.5},
+    'elite_df_size': {'default': 10},
     'functional' : {'default': 'b3lyp'},
     'basis_set' : {'default': '6-31g*'},
     'time' : {'default': 4},
@@ -58,6 +59,7 @@ SA_rank_weight = args.SA_rank_weight if hasattr(args, 'SA_rank_weight') else opt
 elite_value = args.elite_value if hasattr(args, 'elite_value') else options['elite_value']['default']
 anioinc_reorg_rank_weight = args.anioinc_reorg_rank_weight if hasattr(args, 'anioinc_reorg_rank_weight') else options['anioinc_reorg_rank_weight']['default']
 cationic_reorg_rank_weight = args.cationic_reorg_rank_weight if hasattr(args, 'cationic_reorg_rank_weight') else options['cationic_reorg_rank_weight']['default']
+elite_df_size = args.elite_df_size if hasattr(args, 'elite_df_size') else options['elite_df_size']['default']
 functional = args.functional if hasattr(args, 'functional') else options['functional']['default']
 basis_set = args.basis_set if hasattr(args, 'basis_set') else options['basis_set']['default']
 time = args.time if hasattr(args, 'time') else options['time']['default']
@@ -81,8 +83,23 @@ sorted_molecule_df = molecule_df.sort_values(['Rank Sum'], ascending=True)
 elite_df = sorted_molecule_df.head(int(len(sorted_molecule_df)*(elite_value/100)))
 
 #dict of elite 25 monomers and their SMILES
-elite_smi = dict(zip(elite_df['Name'], elite_df['SMILES']))
+elite_smi_int = dict(zip(elite_df['Name'], elite_df['SMILES']))
 
+elite_smi = {}
+for k, v in elite_smi_int.items():
+    elite_smi[str(k)] = v
+
+#make sure the new potential elites is long enough
+if len(elite_smi) <= elite_df_size:
+    elite_smi_int = dict(zip(sorted_molecule_df['Name'], sorted_molecule_df['SMILES']))
+
+    elite_smi = {}
+    for k, v in elite_smi_int.items():
+        elite_smi[str(k)] = v
+
+    elite_df = sorted_molecule_df
+
+print('Submit Calculations')
 # run reorganisation calucltions for elite 25%
 # THE psi4 scripts have not been written for these yet
 # The opt_c and opt_a will also hav to contain the n_c_geo and n_a_geo as those calucltions rely off the coordinates of the optimised geometry
@@ -92,16 +109,18 @@ for k, v in elite_smi.items():
     run_psi4('sp_c', str(k), v, time, cpus, functional, basis_set) 
     run_psi4('sp_a', str(k), v, time, cpus, functional, basis_set)
 
+print('Reorgansaition calculations submited')
+
 #turn into a list of tasks that calculation_status function can proccess
 task_list = []
 for k, v in elite_smi.items():
     k = str(k)
-    task_opt_c = lambda: is_file_present(f'{k}/{k}_opt_c_energy_and_gap.txt')
-    task_opt_a = lambda: is_file_present(f'{k}/{k}_opt_a_energy_and_gap.txt')
+    task_opt_c = lambda: is_file_present(f'{k}/{k}_opt_c_energy_and_gap.txt', 'opt_c')
+    task_opt_a = lambda: is_file_present(f'{k}/{k}_opt_a_energy_and_gap.txt', 'opt_a')
     task_sp_c = lambda: is_file_present(f'{k}/{k}_sp_c_energy_and_gap.txt')
     task_sp_a = lambda: is_file_present(f'{k}/{k}_sp_a_energy_and_gap.txt')
-    task_n_c_geo = lambda: is_file_present(f'{k}/{k}_n_c_geo_energy_and_gap.txt')
-    task_n_a_geo = lambda: is_file_present(f'{k}/{k}_n_a_geo_energy_and_gap.txt')
+    task_n_c_geo = lambda: is_file_present(f'{k}/{k}_n_c_geo_energy_and_gap.txt', 'n_c_geo')
+    task_n_a_geo = lambda: is_file_present(f'{k}/{k}_n_a_geo_energy_and_gap.txt', 'n_a_geo')
     #add all the tasks to the task list
     task_list.append((f'{k}_opt_c', task_opt_c()))
     task_list.append((f'{k}_opt_a', task_opt_a()))
@@ -110,8 +129,12 @@ for k, v in elite_smi.items():
     task_list.append((f'{k}_n_c_geo', task_n_c_geo()))
     task_list.append((f'{k}_n_a_geo', task_n_a_geo()))
 
+print('Testing calculations status')
+
 #returns the failed and successful calculations, keeps looping until all calculations are done
 succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_time=5)
+
+print('Calculations status test finished')
 
 failed_molecules = {}
 for k, v in failed_dict.items():
@@ -138,6 +161,39 @@ for k, v in succesful_molecules.items():
 
     reorganisation_anionic[k] = anion_reorg
     reorganisation_cationic[k] = cation_reorg
+
+#Making sure that if just one of the reorganisation energies have failed then the molecules still progresses
+if len(failed_dict.items()) != 0:
+    for k, v in elite_smi.items():
+        if all(f'{k}_{job_name}' not in failed_dict for job_name in ['n_c_geo', 'opt_c', 'sp_c']) and any(f'{k}_{job_name}' in failed_dict for job_name in ['n_a_geo', 'opt_a', 'sp_a']):
+            print(f'Cation reorganisation did not fail for {k}')
+            data_opt = extract_data_from_txt(f'{k}/{k}_opt_energy_and_gap.txt')
+            data_opt_c = extract_data_from_txt(f'{k}/{k}_opt_c_energy_and_gap.txt')
+            data_sp_c = extract_data_from_txt(f'{k}/{k}_sp_c_energy_and_gap.txt')
+            data_n_c_geo = extract_data_from_txt(f'{k}/{k}_n_c_geo_energy_and_gap.txt')
+
+            cation_reorg = cal_reorg(data_opt, data_sp_c, data_opt_c, data_n_c_geo, calculation_software='Psi4')
+            reorganisation_cationic[k] = cation_reorg
+            reorganisation_anionic[k] = 100000 #stupidly large number so to still allow for it to be present but not affect data
+        
+        elif all(f'{k}_{job_name}' not in failed_dict for job_name in ['n_a_geo', 'opt_a', 'sp_a']) and any(f'{k}_{job_name}' in failed_dict for job_name in ['n_c_geo', 'opt_c', 'sp_c']):
+            print(f'Anioinc reorganisation did not fail for {k}')
+            data_opt = extract_data_from_txt(f'{k}/{k}_opt_energy_and_gap.txt')
+            data_opt_a = extract_data_from_txt(f'{k}/{k}_opt_a_energy_and_gap.txt')
+            data_sp_a = extract_data_from_txt(f'{k}/{k}_sp_a_energy_and_gap.txt')
+            data_n_a_geo = extract_data_from_txt(f'{k}/{k}_n_a_geo_energy_and_gap.txt')
+
+            anion_reorg = cal_reorg(data_opt, data_sp_a, data_opt_a, data_n_a_geo, calculation_software='Psi4')
+            reorganisation_anionic[k] = anion_reorg
+            reorganisation_cationic[k] = 100000 #stupidly large number so to still allow for it to be present but not affect data
+        
+        elif any(f'{k}_{job_name}' in failed_dict for job_name in ['n_c_geo', 'opt_c', 'sp_c']) and any(f'{k}_{job_name}' in failed_dict for job_name in ['n_a_geo', 'opt_a', 'sp_a']):
+             reorganisation_cationic[k] = 100000
+             reorganisation_anionic[k] = 100000
+
+#reorder to make sure it matches up for df
+reorganisation_cationic = reorder_dict(elite_smi, reorganisation_cationic)
+reorganisation_anionic = reorder_dict(elite_smi, reorganisation_anionic)
 
 #create dataframe of elite 25% with reorganmsaition energy
 elite_df = elite_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Rank Sum'], axis=1)
@@ -175,6 +231,13 @@ elite_cationic = sorted_cationic_reorg_df.head(int(len(sorted_cationic_reorg_df)
 
 new_elite_df = pd.concat([elite_anionic, elite_cationic])
 new_elite_df = new_elite_df.drop_duplicates()
+
+#make sure the elite doesn't get too small and can be set by the user to be at least a certain size
+if len(new_elite_df) <= elite_df_size:
+    new_elite_df = pd.concat([sorted_anionic_reorg_df, sorted_cationic_reorg_df]).drop_duplicates()
+
+else:
+    new_elite_df = new_elite_df
 
 #similarity comparison
 old_elite_smi = dict(zip(old_elite_df['Name'], old_elite_df['SMILES']))

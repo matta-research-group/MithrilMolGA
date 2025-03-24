@@ -30,7 +30,7 @@ def wait_for_file(file_path, sleep_time=180, timeout=21600):
     # Perform the desired action once the file is present
     return True
 
-def is_file_present(file_path):
+def is_file_present(file_path, reorganisation=None):
     """
     Checks if a file is present at the given file path. If the file is not present,
     it checks for an error file with the same name but with a '.err' extension.
@@ -45,13 +45,35 @@ def is_file_present(file_path):
             'Calculation failed' if the error file is present and contains any content.
             'Waiting' if neither the file nor the error file is present.
     """
-    err_file_path = file_path.replace('_energy_and_gap.txt', '.err')
+    if reorganisation == None:
+        err_file_path = file_path.replace('_energy_and_gap.txt', '.err')
+        print(err_file_path)
+
+    if reorganisation == 'n_c_geo':
+        print('n_c_geo')
+        err_file_path = file_path.replace('_n_c_geo_energy_and_gap.txt', '_cation.err')
+        print(err_file_path)
+    
+    if reorganisation == 'opt_c':
+        print('opt_c')
+        err_file_path = file_path.replace('_opt_c_energy_and_gap.txt', '_cation.err')
+        print(err_file_path)
+
+    if reorganisation == 'opt_a':
+        print('opt_a')
+        err_file_path = file_path.replace('_opt_a_energy_and_gap.txt', '_anion.err')
+        print(err_file_path)
+
+    if reorganisation == 'n_a_geo':
+        print('n_a_geo')
+        err_file_path = file_path.replace('_n_a_geo_energy_and_gap.txt', '_anion.err')
+        print(err_file_path)
     
     while not os.path.exists(file_path):
         if os.path.exists(err_file_path):
             with open(err_file_path, 'r') as err_file:
                 error_content = err_file.read().strip()
-                if any(word in error_content for word in ['Exception created', 'failed']):
+                if any(word in error_content for word in ['OptError', 'failed', 'Could not converge SCF', 'ValueError', 'Could not converge geometry optimization']):
                     return 'Calculation failed'
                 else:
                     return 'Waiting'
@@ -114,3 +136,7 @@ def calculations_status(tasks, sleep_time=10):
         time.sleep(sleep_time)  # Sleep between each loop iteration
 
     return data_dict, failed_dict, attempts
+
+def reorder_dict(reference_dict, dict_to_reorder):
+    reordered_dict = {key: dict_to_reorder[key] for key in reference_dict if key in dict_to_reorder}
+    return reordered_dict

@@ -79,7 +79,7 @@ for k, v in elite_smi.items():
         #updates the new molecules list
         new_study_molecules[make_num_str] = new_molecule
         #updates the ran dictionary so no overlap occures
-        all_ran_smi[make_num_str] = new_molecule
+        all_ran_smi_canon[make_num_str] = new_molecule
 
     if selected_choice == 'new_non_bio':
         #do this
@@ -96,7 +96,7 @@ for k, v in elite_smi.items():
         #updates the new molecules list
         new_study_molecules[make_num_str] = new_molecule
         #updates the ran dictionary so no overlap occures
-        all_ran_smi[make_num_str] = new_molecule
+        all_ran_smi_canon[make_num_str] = new_molecule
 
     if selected_choice == 'new_linker':
         #do this
@@ -116,7 +116,7 @@ for k, v in elite_smi.items():
         #updates the new molecules list
         new_study_molecules[make_num_str] = replaced_linker
         #updates the ran dictionary so no overlap occures
-        all_ran_smi[make_num_str] = replaced_linker
+        all_ran_smi_canon[make_num_str] = replaced_linker
 
 #make a new list of molecules to run and make it same length as the molecule ran in list
 current_run = open_dictionary(f'molecules_to_run_{run_num_str}.json')
@@ -199,13 +199,13 @@ base_number = int(last_key)
 # Renumber the new dictionary
 renumbered_dict_mutation = {f"{base_number + 1 + i}": v for i, (k, v) in enumerate(new_study_molecules.items())}
 
-molecules_to_run = renumbered_dict | renumbered_dict_mutation
+molecules_to_run = new_molecules_renumbered | renumbered_dict_mutation
 
 run_num_int = int(run_num_str)
 new_run_num = run_num_int + 1
 new_run_num_str = str(new_run_num)
 
-save_dictionary(molecules_to_run, f'molecule_to_run_{new_run_num_str}.json')
+save_dictionary(molecules_to_run, f'molecules_to_run_{new_run_num_str}.json')
 
 progress_file_path = 'GA_status.txt'
 

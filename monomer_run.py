@@ -65,8 +65,11 @@ potential_molecules = open_dictionary(f'molecules_to_run_{run_num_str}.json')
 #load monomer df
 monomer_df = pd.read_csv('monomer_df.csv')
 
+#makes sure the monomer df names are in the correct order so no duplicates happen
+monomer_df_sorted = monomer_df.sort_values(by='Name', key=lambda x: x.str.split('_').str[0].astype(int), ascending=True)
+
 #dict of monomers and their SMILES
-monomer_already_run = dict(zip(monomer_df['Name'], monomer_df['SMILES']))
+monomer_already_run = dict(zip(monomer_df_sorted['Name'], monomer_df_sorted['SMILES']))
 
 molecules_monomers = {}
 for k, v in potential_molecules.items():
@@ -157,7 +160,7 @@ run_monomer_x_df.insert(3, 'LUMO /eV', LUMO_dict.values())
 run_monomer_x_df.insert(4, 'EG /eV', EG_dict.values())
 
 #add the new monomer data to the dataframe of existing monomers
-df_concat = pd.concat([monomer_df, run_monomer_x_df], ignore_index=True)
+df_concat = pd.concat([monomer_df_sorted, run_monomer_x_df], ignore_index=True)
 
 #override the old monomer dataframe with the new one with the data
 df_concat.to_csv(f'monomer_df.csv', index=False)

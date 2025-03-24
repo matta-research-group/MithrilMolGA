@@ -58,7 +58,7 @@ potential_molecules = open_dictionary(f'molecules_to_run_{run_num_str}.json')
 
 total_molecules_ran = open_dictionary('total_molecules_ran.json')
 
-total_molecules = total_molecules_ran | total_molecules_ran
+total_molecules = total_molecules_ran | potential_molecules
 
 save_dictionary(total_molecules, 'total_molecules_ran.json')
 
