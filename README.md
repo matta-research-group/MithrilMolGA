@@ -66,6 +66,7 @@ When the GA is submitted a `GA_status.txt` file is created. This file tracks whe
 - anioinc_reorg_rank_weight = `0.5` (worth double that of Eg and planarity and 8 times of SA score)
 - cationic_reorg_rank_weight = `0.5` (worth double that of Eg and planarity and 8 times of SA score)
 - elite_value = `25` (percent) percentage of molecules to be considered elite
+- elite_df_size = `10` makes sure the elite df has a minimum size.
 
 
 ## Future Work
