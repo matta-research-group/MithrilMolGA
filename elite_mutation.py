@@ -122,8 +122,10 @@ for k, v in elite_smi.items():
 current_run = open_dictionary(f'molecules_to_run_{run_num_str}.json')
 length_of_run = len(current_run)
 length_of_new_run = len(new_study_molecules)
-new_molecules_needed = length_of_run - length_of_new_run
+#new_molecules_needed = length_of_run - length_of_new_run
 
+#THIS IS JUST FOR TESTING PURPOSES
+new_molecules_needed = 30 - length_of_new_run
 #new molecules to make up the numbers lost via elite step
 new_molecules = {}
 for i in range(new_molecules_needed + 1):
@@ -190,16 +192,21 @@ base_number = int(last_key)
 # Renumber the new dictionary
 new_molecules_renumbered = {f"{base_number + 1 + i}": v for i, (k, v) in enumerate(new_molecules.items())}
 
-# Extract the last key from the reference dictionary
-last_key = list(new_molecules_renumbered.keys())[-1]
+if len(new_molecules_renumbered) == 0:
+    molecules_to_run = new_study_molecules
 
-# Determine the base number from the last key
-base_number = int(last_key)
+else:
 
-# Renumber the new dictionary
-renumbered_dict_mutation = {f"{base_number + 1 + i}": v for i, (k, v) in enumerate(new_study_molecules.items())}
+    # Extract the last key from the reference dictionary
+    last_key = list(new_molecules_renumbered.keys())[-1]
 
-molecules_to_run = new_molecules_renumbered | renumbered_dict_mutation
+    # Determine the base number from the last key
+    base_number = int(last_key)
+
+    # Renumber the new dictionary
+    renumbered_dict_mutation = {f"{base_number + 1 + i}": v for i, (k, v) in enumerate(new_study_molecules.items())}
+
+    molecules_to_run = new_molecules_renumbered | renumbered_dict_mutation
 
 run_num_int = int(run_num_str)
 new_run_num = run_num_int + 1

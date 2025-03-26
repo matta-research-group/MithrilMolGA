@@ -47,27 +47,36 @@ def is_file_present(file_path, reorganisation=None):
     """
     if reorganisation == None:
         err_file_path = file_path.replace('_energy_and_gap.txt', '.err')
+        py_file_path = file_path.replace('_energy_and_gap.txt', '.py')
         print(err_file_path)
 
     if reorganisation == 'n_c_geo':
         print('n_c_geo')
         err_file_path = file_path.replace('_n_c_geo_energy_and_gap.txt', '_cation.err')
+        py_file_path = file_path.replace('_n_c_geo_energy_and_gap.txt', '_cation.py')
         print(err_file_path)
+        print(py_file_path)
     
     if reorganisation == 'opt_c':
         print('opt_c')
         err_file_path = file_path.replace('_opt_c_energy_and_gap.txt', '_cation.err')
+        py_file_path = file_path.replace('_opt_c_energy_and_gap.txt', '_cation.py')
         print(err_file_path)
+        print(py_file_path)
 
     if reorganisation == 'opt_a':
         print('opt_a')
         err_file_path = file_path.replace('_opt_a_energy_and_gap.txt', '_anion.err')
+        py_file_path = file_path.replace('_opt_a_energy_and_gap.txt', '_anion.py')
         print(err_file_path)
+        print(py_file_path)
 
     if reorganisation == 'n_a_geo':
         print('n_a_geo')
         err_file_path = file_path.replace('_n_a_geo_energy_and_gap.txt', '_anion.err')
+        py_file_path = file_path.replace('_n_a_geo_energy_and_gap.txt', '_anion.py')
         print(err_file_path)
+        print(py_file_path)
     
     while not os.path.exists(file_path):
         if os.path.exists(err_file_path):
@@ -77,6 +86,10 @@ def is_file_present(file_path, reorganisation=None):
                     return 'Calculation failed'
                 else:
                     return 'Waiting'
+        #if the error file and the txt file don't exist then the calculations has submitted but isn't running yet
+        elif os.path.exists(py_file_path):
+            return 'Waiting Start'
+
     return 'Success'
 
 
@@ -93,6 +106,7 @@ def calculations_status(tasks, sleep_time=10):
     -------
     data_dict (dict): A dictionary with task names as keys and 'Success' or 'Failed' as values.
     failed_dict (dict): A dictionary with task names as keys and the number of failed attempts as values.
+    attempts (dict): A dictionary showing how many attempts each calculation took to retreave
 
     Example Tasks
     -------------
@@ -125,6 +139,13 @@ def calculations_status(tasks, sleep_time=10):
             task = lambda: is_file_present(f'{task_name}/{task_name}_opt_energy_and_gap.txt')
             tasks.append((task_name, task()))  # Re-add the task to the end of the list
             print(f'Task {task_name} waiting, will retry (attempt {attempts[task_name]})')
+
+        elif 'Waiting Start' in result:
+            print(f'Task {task_name} is awaiting to start')
+            attempts[task_name] += 1
+            task = lambda: is_file_present(f'{task_name}/{task_name}_opt_energy_and_gap.txt')
+            tasks.append((task_name, task()))  # Re-add the task to the end of the list
+            print(f'Task {task_name} waiting to start, will retry (attempt {attempts[task_name]})')
 
         elif 'Calculation failed' in result:
             print(f'Task {task_name} failed')

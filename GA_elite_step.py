@@ -162,6 +162,8 @@ for k, v in succesful_molecules.items():
     reorganisation_anionic[k] = anion_reorg
     reorganisation_cationic[k] = cation_reorg
 
+print('Calculating reorg complete')
+
 #Making sure that if just one of the reorganisation energies have failed then the molecules still progresses
 if len(failed_dict.items()) != 0:
     for k, v in elite_smi.items():
@@ -194,6 +196,9 @@ if len(failed_dict.items()) != 0:
 #reorder to make sure it matches up for df
 reorganisation_cationic = reorder_dict(elite_smi, reorganisation_cationic)
 reorganisation_anionic = reorder_dict(elite_smi, reorganisation_anionic)
+
+
+print('semi failed reorg molecules calculated complete')
 
 #create dataframe of elite 25% with reorganmsaition energy
 elite_df = elite_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Rank Sum'], axis=1)

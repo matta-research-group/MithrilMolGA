@@ -330,6 +330,10 @@ def swap_one_fragment(mol_smi, bio_dic, non_bio_dic, fragment_replace):
     fragments_one_attach = [smi for smi in fragments if smi.count('I') == 1]
     # List of the old linker
     linkage = [smi for smi in fragments if smi.count('I') == 2]
+
+    #if the linker is a single bond it is unable to separate it so have to account for it
+    if len(linkage) == 0:
+        linkage = ['II']
     # Remove the I from the fragment
     fragment_one = re.sub(r'\[I\]', '', fragments_one_attach[0])
     fragment_two = re.sub(r'\[I\]', '', fragments_one_attach[1])
