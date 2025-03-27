@@ -119,7 +119,8 @@ if molecules_to_run is not None:
 task_list = []
 for k, v in molecules_to_run.items():
     task = lambda: is_file_present(f'{k}/{k}_opt_energy_and_gap.txt')
-    task_list.append((k, task()))
+    task_name = f'{k}_opt'
+    task_list.append((task_name, task()))
 
 #returns the failed and successful calculations, keeps looping until all calculations are done
 succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_time=1)
@@ -127,6 +128,7 @@ succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_tim
 #add failed monomers to a new dictionary
 failed_monomers = {}
 for k, v in failed_dict.items():
+    k = k.split('_')[0] #just the number of the molecule, not the job
     failed_monomers[k] = molecules_to_run[k]
 
 #extract data from the successful monomers
@@ -134,6 +136,7 @@ HOMO_dict = {}
 LUMO_dict = {}
 EG_dict = {}
 for k, v in succesful_dict.items():
+    k = k.split('_')[0] #just the number of the molecule, not the job
     file_path = f'{k}/{k}_opt_energy_and_gap.txt'
 
     data = extract_data_from_txt(file_path)

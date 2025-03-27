@@ -57,13 +57,15 @@ ran_molecules = open_dictionary(f'ran_{run_num_str}_molecules.json')
 task_list = []
 for k, v in ran_molecules.items():
     task = lambda: is_file_present(f'{k}/{k}_opt_energy_and_gap.txt')
-    task_list.append((k, task()))
+    task_name = f'{k}_opt'
+    task_list.append((task_name, task()))
 
 #returns the failed and successful calculations, keeps looping until all calculations are done
 succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_time=5)
 
 failed_molecules = {}
 for k, v in failed_dict.items():
+    k = k.split('_')[0] #just the number of the molecule, not the job
     failed_molecules[k] = ran_molecules[k]
 
 SA_score_dict = {}
@@ -73,6 +75,7 @@ EG_dict = {}
 planarity_dict = {}
 succesful_dict_smi = {}
 for k, v in succesful_dict.items():
+    k = k.split('_')[0] #just the number of the molecule, not the job
 
     succesful_dict_smi[k] =  ran_molecules[k]
 
@@ -96,7 +99,7 @@ for k, v in succesful_dict.items():
     linker_type = find_linker_type(m)
     #planarity data
     mol_plan = finding_planairty_psi4(k, ran_molecules[k], linker_type, 'opt')
-    planarity_dict[k] = mol_plan
+    planarity_dict[k] = float(mol_plan)
 
 run_x_df = pd.DataFrame()
 

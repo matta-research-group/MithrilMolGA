@@ -1,6 +1,8 @@
 # GA_TSJ_project
 Code base of the genetic algorithm project
 
+![logo](https://github.com/matta-research-group/GA_TSJ_project/GA_detailed_flowchart.drawio.png?raw=true)
+
 ## QCflow
 
 This GA uses a package created by Tristan Stephens-Jones as part of the Matta Research Group. It uses QCflow and more specifically the beta version of the Psi4 version (https://github.com/matta-research-group/QCflow/tree/qcflow-psi4). All the calculations submitted using this GA use Psi4 and are not adapted for Gaussian16 as Psi4 is more accessible and was found to be faster and produce highly similar results compared to G16.

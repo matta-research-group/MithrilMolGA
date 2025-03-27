@@ -45,7 +45,7 @@ def is_file_present(file_path, reorganisation=None):
             'Calculation failed' if the error file is present and contains any content.
             'Waiting' if neither the file nor the error file is present.
     """
-    if reorganisation == None:
+    if (reorganisation == None) or (reorganisation == 'opt') or (reorganisation == 'sp_c') or (reorganisation == 'sp_a'):
         err_file_path = file_path.replace('_energy_and_gap.txt', '.err')
         py_file_path = file_path.replace('_energy_and_gap.txt', '.py')
         print(err_file_path)
@@ -78,19 +78,25 @@ def is_file_present(file_path, reorganisation=None):
         print(err_file_path)
         print(py_file_path)
     
-    while not os.path.exists(file_path):
-        if os.path.exists(err_file_path):
-            with open(err_file_path, 'r') as err_file:
-                error_content = err_file.read().strip()
-                if any(word in error_content for word in ['OptError', 'failed', 'Could not converge SCF', 'ValueError', 'Could not converge geometry optimization']):
-                    return 'Calculation failed'
-                else:
-                    return 'Waiting'
-        #if the error file and the txt file don't exist then the calculations has submitted but isn't running yet
-        elif os.path.exists(py_file_path):
-            return 'Waiting Start'
+    #does the result file exist?
+    if os.path.exists(file_path):
+        return 'Success'
 
-    return 'Success'
+    #if not, does the error file exist, if it does then look at it
+    elif os.path.exists(err_file_path):
+        with open(err_file_path, 'r') as err_file:
+            error_content = err_file.read().strip()
+            if any(word in error_content for word in ['OptError', 'failed', 'Could not converge SCF', 'ValueError', 'Could not converge geometry optimization', 'Please restart from the most recent geometry']):
+                return 'Calculation failed'
+            else:
+                return 'Waiting'
+        #if the error file and the txt file don't exist then the calculations has submitted but isn't running yet
+    elif os.path.exists(py_file_path):
+        return 'Waiting Start'
+
+    #if none of it exists then the calculation has not be submitted and then there is a fail
+    else:
+        return 'Calculation Failed to Submit'
 
 
 def calculations_status(tasks, sleep_time=10):
@@ -129,6 +135,12 @@ def calculations_status(tasks, sleep_time=10):
         #result = task()  # Execute the task
         print(f' {result} {task_name} running')
 
+        #to get the job number and the name to retreave the file
+        task_num = task_name.split('_')[0]
+        job_name = '_'.join(task_name.split('_')[1:])
+        print(f'{task_num}/{task_name}')
+        print(job_name)
+
         if result == 'Success':  # If the task is completed successfully
             print(f'Task {task_name} completed successfully')
             data_dict[task_name] = 'Success'
@@ -136,20 +148,25 @@ def calculations_status(tasks, sleep_time=10):
         elif 'Waiting' in result:
             print(f'Task {task_name} is still waiting')
             attempts[task_name] += 1
-            task = lambda: is_file_present(f'{task_name}/{task_name}_opt_energy_and_gap.txt')
+            task = lambda: is_file_present(f'{task_num}/{task_name}_energy_and_gap.txt', job_name)
             tasks.append((task_name, task()))  # Re-add the task to the end of the list
             print(f'Task {task_name} waiting, will retry (attempt {attempts[task_name]})')
 
         elif 'Waiting Start' in result:
             print(f'Task {task_name} is awaiting to start')
             attempts[task_name] += 1
-            task = lambda: is_file_present(f'{task_name}/{task_name}_opt_energy_and_gap.txt')
+            task = lambda: is_file_present(f'{task_num}/{task_name}_energy_and_gap.txt', job_name)
             tasks.append((task_name, task()))  # Re-add the task to the end of the list
             print(f'Task {task_name} waiting to start, will retry (attempt {attempts[task_name]})')
 
         elif 'Calculation failed' in result:
             print(f'Task {task_name} failed')
             failed_dict[task_name] = 'Failed'
+        
+        elif 'Calculation Failed to Submit' in result:
+            print(f'Task {task_name} calculation failed to submit')
+            failed_dict[task_name] = 'Failed to Submit'
+        
         else:
             data_dict[task_name] = 'In Progress'
         

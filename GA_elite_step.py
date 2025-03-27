@@ -132,7 +132,7 @@ for k, v in elite_smi.items():
 print('Testing calculations status')
 
 #returns the failed and successful calculations, keeps looping until all calculations are done
-succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_time=5)
+succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_time=10)
 
 print('Calculations status test finished')
 
