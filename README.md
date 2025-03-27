@@ -1,7 +1,7 @@
 # GA_TSJ_project
 Code base of the genetic algorithm project
 
-![logo](https://github.com/matta-research-group/GA_TSJ_project/GA_detailed_flowchart.drawio.png?raw=true)
+![logo](GA_detailed_flowchart.drawio.png)
 
 ## QCflow
 
