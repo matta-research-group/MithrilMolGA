@@ -1,7 +1,7 @@
 # GA_TSJ_project
 Code base of the genetic algorithm project
 
-![logo](GA_detailed_flowchart.drawio.png)
+![logo](GA_detailed_flowchart.png)
 
 ## QCflow
 

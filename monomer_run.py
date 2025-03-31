@@ -136,7 +136,7 @@ HOMO_dict = {}
 LUMO_dict = {}
 EG_dict = {}
 for k, v in succesful_dict.items():
-    k = k.split('_')[0] #just the number of the molecule, not the job
+    k = '_'.join(k.split('_')[:2]) #just the number of the molecule, not the job
     file_path = f'{k}/{k}_opt_energy_and_gap.txt'
 
     data = extract_data_from_txt(file_path)
@@ -152,6 +152,7 @@ for k, v in succesful_dict.items():
 
 succesful_dict_CanonSmiles = {}
 for k, v in succesful_dict.items():
+    k = '_'.join(k.split('_')[:2])
     succesful_dict_CanonSmiles[k] = Chem.CanonSmiles(molecules_to_run[k])
 #make a new dataframe with the new monomers data
 run_monomer_x_df = pd.DataFrame()
