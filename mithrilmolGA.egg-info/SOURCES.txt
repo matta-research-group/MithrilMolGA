@@ -1,0 +1,17 @@
+LICENSE
+README.md
+setup.py
+MithrilMolGA/__init__.py
+MithrilMolGA/calculation_status.py
+MithrilMolGA/elite_mutation.py
+MithrilMolGA/GA_data_extraction_step.py
+MithrilMolGA/GA_elite_step.py
+MithrilMolGA/master_GA_script.py
+MithrilMolGA/molecule_mutation.py
+MithrilMolGA/molecule_run.py
+MithrilMolGA/monomer_run.py
+mithrilmolGA.egg-info/PKG-INFO
+mithrilmolGA.egg-info/SOURCES.txt
+mithrilmolGA.egg-info/dependency_links.txt
+mithrilmolGA.egg-info/top_level.txt
+tests/test.py

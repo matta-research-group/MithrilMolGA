@@ -11,8 +11,8 @@ from QCflow.find_torsion import *
 from QCflow.write_psi4 import *
 from QCflow.run_psi4 import *
 from QCflow.energy_calculations import *
-from molecule_mutation import *
-from calculation_status import *
+from MithrilMolGA.molecule_mutation import *
+from MithrilMolGA.calculation_status import *
 import argparse
 
 #Open the data df
