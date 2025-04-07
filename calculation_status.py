@@ -141,25 +141,30 @@ def calculations_status(tasks, sleep_time=10):
         print(f'{task_num}/{task_name}')
         print(job_name)
 
+        #allow for monomer naming convention
+        if task_name.split('_')[1] == 'm':
+            task_num = f'{task_num}_m'
+            job_name = 'opt'
+
         if result == 'Success':  # If the task is completed successfully
             print(f'Task {task_name} completed successfully')
             data_dict[task_name] = 'Success'
 
-        elif 'Waiting' in result:
+        elif 'Waiting' == result:
             print(f'Task {task_name} is still waiting')
             attempts[task_name] += 1
             task = lambda: is_file_present(f'{task_num}/{task_name}_energy_and_gap.txt', job_name)
             tasks.append((task_name, task()))  # Re-add the task to the end of the list
             print(f'Task {task_name} waiting, will retry (attempt {attempts[task_name]})')
 
-        elif 'Waiting Start' in result:
+        elif 'Waiting Start' == result:
             print(f'Task {task_name} is awaiting to start')
             attempts[task_name] += 1
             task = lambda: is_file_present(f'{task_num}/{task_name}_energy_and_gap.txt', job_name)
             tasks.append((task_name, task()))  # Re-add the task to the end of the list
             print(f'Task {task_name} waiting to start, will retry (attempt {attempts[task_name]})')
 
-        elif 'Calculation failed' in result:
+        elif 'Calculation failed' == result:
             print(f'Task {task_name} failed')
             failed_dict[task_name] = 'Failed'
         

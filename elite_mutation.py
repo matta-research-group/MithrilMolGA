@@ -125,7 +125,7 @@ length_of_new_run = len(new_study_molecules)
 #new_molecules_needed = length_of_run - length_of_new_run
 
 #THIS IS JUST FOR TESTING PURPOSES
-new_molecules_needed = 30 - length_of_new_run
+new_molecules_needed = 50 - length_of_new_run
 #new molecules to make up the numbers lost via elite step
 new_molecules = {}
 for i in range(new_molecules_needed + 1):

@@ -31,8 +31,8 @@ def single_run(run_number, functional='b3lyp', basis_set='6-31g*',
 
 #run a test loop
 
-for i in range(7, 11):
+for i in range(3, 8):
     single_run(i, functional='b3lyp', basis_set='6-31g*', 
                time=5, number_of_cpus=10, EG_cutoff=3.2, 
                EG_rank_weight=1, planarity_rank_weight=1, SA_rank_weight=4,
-               elite_value=50, anioinc_reorg_rank_weight=0.5, cationic_reorg_rank_weight=0.5, elite_df_size=20)
+               elite_value=50, anioinc_reorg_rank_weight=0.5, cationic_reorg_rank_weight=0.5, elite_df_size=30)
