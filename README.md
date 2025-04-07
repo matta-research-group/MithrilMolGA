@@ -1,8 +1,8 @@
-![logo](mirthilmolga_log-Chatgpt.png)
+![logo](mirthilmolga_log-Chatgpt.png){ width=300px }
 # GA_TSJ_project
 Code base of the genetic algorithm project
 
-![logo](GA_detailed_flowchart.png)
+![logo](GA_detailed_flowchart.drawio.png)
 
 ## QCflow
 
