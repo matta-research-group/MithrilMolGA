@@ -1,8 +1,8 @@
 <div align="center">
   <img src="mirthilmolga_log-Chatgpt.png" alt="MithrilMolGA Logo" width="300" height="300">
 </div>
-# GA_TSJ_project
-Code base of the genetic algorithm project
+
+## MithrilMolGa Workflow
 
 ![logo](GA_detailed_flowchart.drawio.png)
 
