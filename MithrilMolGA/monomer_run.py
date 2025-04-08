@@ -17,6 +17,7 @@ from MithrilMolGA.calculation_status import *
 import re
 import itertools
 import argparse
+import os
 
 # All monomers have to be CanonSmiles for retrieval from dataframes
 # This file takes all the molecules that want to be run
@@ -60,10 +61,10 @@ cpus = args.cpus if hasattr(args, 'cpus') else options['cpus']['default']
 
 
 #load molecules to run
-potential_molecules = open_dictionary(f'molecules_to_run_{run_num_str}.json')
+potential_molecules = open_dictionary(f'submission_dic/molecules_to_run_{run_num_str}.json')
 
 #load monomer df
-monomer_df = pd.read_csv('monomer_df.csv')
+monomer_df = pd.read_csv('dataframes/monomer_df.csv')
 
 #makes sure the monomer df names are in the correct order so no duplicates happen
 monomer_df_sorted = monomer_df.sort_values(by='Name', key=lambda x: x.str.split('_').str[0].astype(int), ascending=True)
@@ -108,6 +109,9 @@ for k1, v1 in molecules_monomers.items():
         molecules_to_run[make_mono_str] = v1
         #updates the ran dictionary so no overlap occures
         monomer_already_run[make_mono_str] = v1
+
+#go into the data folder
+os.chdir('data')
 
 # if the data is missing, we need to run the psi4 calculations
 if molecules_to_run is not None:
@@ -155,6 +159,10 @@ for k, v in succesful_dict.items():
     k = '_'.join(k.split('_')[:2])
     succesful_dict_CanonSmiles[k] = Chem.CanonSmiles(molecules_to_run[k])
 #make a new dataframe with the new monomers data
+
+#move out of data dic
+os.chdir('../')
+
 run_monomer_x_df = pd.DataFrame()
 
 run_monomer_x_df.insert(0, 'Name', succesful_dict_CanonSmiles.keys())
@@ -167,8 +175,8 @@ run_monomer_x_df.insert(4, 'EG /eV', EG_dict.values())
 df_concat = pd.concat([monomer_df_sorted, run_monomer_x_df], ignore_index=True)
 
 #override the old monomer dataframe with the new one with the data
-df_concat.to_csv(f'monomer_df.csv', index=False)
-failed_monomers_file_name = f'failed_monomers_run_{run_num_str}.json'
+df_concat.to_csv(f'dataframes/monomer_df.csv', index=False)
+failed_monomers_file_name = f'failed_dic/failed_monomers_run_{run_num_str}.json'
 save_dictionary(failed_monomers, failed_monomers_file_name)
 
 progress_file_path = 'GA_status.txt'

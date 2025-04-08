@@ -17,6 +17,7 @@ from MithrilMolGA.calculation_status import *
 import re
 import itertools
 import argparse
+import os
 
 # This script runs the potential molecules
 # Its checks if the donor acceptor matching
@@ -54,17 +55,20 @@ cpus = args.cpus if hasattr(args, 'cpus') else options['cpus']['default']
 
 
 #load molecules to run
-potential_molecules = open_dictionary(f'molecules_to_run_{run_num_str}.json')
+potential_molecules = open_dictionary(f'submission_dic/molecules_to_run_{run_num_str}.json')
 
-total_molecules_ran = open_dictionary('total_molecules_ran.json')
+total_molecules_ran = open_dictionary('ga_dic/total_molecules_ran.json')
 
 total_molecules = total_molecules_ran | potential_molecules
 
-save_dictionary(total_molecules, 'total_molecules_ran.json')
+save_dictionary(total_molecules, 'ga_dic/total_molecules_ran.json')
 
-monomer_df = pd.read_csv('monomer_df.csv') #df containing already ran monomers
+monomer_df = pd.read_csv('dataframes/monomer_df.csv') #df containing already ran monomers
 
 monomer_smi = dict(zip(monomer_df['Name'], monomer_df['SMILES'])) #dict of monomers and their SMILES
+
+#change into data folder
+os.chdir('data')
 
 ran_molecules = {}
 failed_D_A_match = {}
@@ -112,6 +116,9 @@ for k, v in potential_molecules.items():
     else:
         failed_D_A_match[k] = v
 
+#back out of data folder
+os.chdir('../')
+
 d_a_matching_df = pd.DataFrame()
 
 d_a_matching_df.insert(0, 'Name', potential_molecules.keys())
@@ -121,14 +128,14 @@ d_a_matching_df.insert(3, 'Acceptor', acceptor_smiles.values())
 d_a_matching_df.insert(4, 'D_A EG /eV', all_molecules_D_A.values())
 d_a_matching_df.insert(5, 'A_D EG /eV', all_molecules_A_D.values())
 
-d_a_df = pd.read_csv('d_a_df.csv')
+d_a_df = pd.read_csv('dataframes/d_a_df.csv')
 
 d_a_df_concat = pd.concat([d_a_df, d_a_matching_df], ignore_index=True)
 
-d_a_df_concat.to_csv('d_a_df.csv', index=False)
+d_a_df_concat.to_csv('dataframes/d_a_df.csv', index=False)
 
-save_dictionary(ran_molecules, f'ran_{run_num_str}_molecules.json')
-save_dictionary(failed_D_A_match, f'failed_D_A_match_{run_num_str}_molecules.json')
+save_dictionary(ran_molecules, f'run_dic/ran_{run_num_str}_molecules.json')
+save_dictionary(failed_D_A_match, f'failed_dic/failed_D_A_match_{run_num_str}_molecules.json')
 
 progress_file_path = 'GA_status.txt'
 

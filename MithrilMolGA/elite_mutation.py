@@ -42,20 +42,20 @@ else:
 # 25% are new molecules, 25% have 1 biofragment fragment change, 25% non-biofragment change, 25% linker change
 
 #load the elite df
-elite_df = pd.read_csv(f'elite_run_{run_num_str}_df.csv')
+elite_df = pd.read_csv(f'dataframes/elite_run_{run_num_str}_df.csv')
 #get th smi strings of the eilte_25
 elite_smi = dict(zip(elite_df['Name'], elite_df['SMILES']))
 #load all the molecules that have ever been ran in the GA
-all_ran_molecules_dic = open_dictionary('total_molecules_ran.json')
+all_ran_molecules_dic = open_dictionary('ga_dic/total_molecules_ran.json')
 
 all_ran_smi_canon = {k: Chem.CanonSmiles(v) for k, v in all_ran_molecules_dic.items()}
 
 #linker_dic
-linker_dic = open_dictionary('linker_dic.json')
+linker_dic = open_dictionary('ga_dic/linker_dic.json')
 #bio_dic
-bio_dic = open_dictionary('bio_dic.json')
+bio_dic = open_dictionary('ga_dic/bio_dic.json')
 #non_bio_dic
-non_bio_dic = open_dictionary('non_bio_dic.json')
+non_bio_dic = open_dictionary('ga_dic/non_bio_dic.json')
 
 new_study_molecules = {}
 for k, v in elite_smi.items():
@@ -119,7 +119,7 @@ for k, v in elite_smi.items():
         all_ran_smi_canon[make_num_str] = replaced_linker
 
 #make a new list of molecules to run and make it same length as the molecule ran in list
-current_run = open_dictionary(f'molecules_to_run_{run_num_str}.json')
+current_run = open_dictionary(f'submission_dic/molecules_to_run_{run_num_str}.json')
 length_of_run = len(current_run)
 length_of_new_run = len(new_study_molecules)
 #new_molecules_needed = length_of_run - length_of_new_run
@@ -212,7 +212,7 @@ run_num_int = int(run_num_str)
 new_run_num = run_num_int + 1
 new_run_num_str = str(new_run_num)
 
-save_dictionary(molecules_to_run, f'molecules_to_run_{new_run_num_str}.json')
+save_dictionary(molecules_to_run, f'submission_dic/molecules_to_run_{new_run_num_str}.json')
 
 progress_file_path = 'GA_status.txt'
 

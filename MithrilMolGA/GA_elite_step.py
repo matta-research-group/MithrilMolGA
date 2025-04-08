@@ -14,6 +14,7 @@ from QCflow.energy_calculations import *
 from MithrilMolGA.molecule_mutation import *
 from MithrilMolGA.calculation_status import *
 import argparse
+import os
 
 #Open the data df
 #Sort top EG, top Plan, top SA
@@ -66,7 +67,7 @@ time = args.time if hasattr(args, 'time') else options['time']['default']
 cpus = args.cpus if hasattr(args, 'cpus') else options['cpus']['default']
 
 #load molecule df
-molecule_df = pd.read_csv(f'run_{run_num_str}_data.csv')
+molecule_df = pd.read_csv(f'dataframes/run_{run_num_str}_data.csv')
 
 
 molecule_df['EG Rank Order'] = molecule_df['EG /eV'].rank(ascending=True)
@@ -103,6 +104,10 @@ print('Submit Calculations')
 # run reorganisation calucltions for elite 25%
 # THE psi4 scripts have not been written for these yet
 # The opt_c and opt_a will also hav to contain the n_c_geo and n_a_geo as those calucltions rely off the coordinates of the optimised geometry
+
+#go into data folder
+os.chdir('data')
+
 for k, v in elite_smi.items():
     run_psi4('anion', str(k), v, time, cpus, functional, basis_set) #user set parameters
     run_psi4('cation', str(k), v, time, cpus, functional, basis_set) 
@@ -200,6 +205,9 @@ reorganisation_anionic = reorder_dict(elite_smi, reorganisation_anionic)
 
 print('semi failed reorg molecules calculated complete')
 
+#leave data folder
+os.chdir('../')
+
 #create dataframe of elite 25% with reorganmsaition energy
 elite_df = elite_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Rank Sum'], axis=1)
 elite_df.insert(7, 'Anionic Reorganisation Energy /eV', reorganisation_anionic.values())
@@ -208,7 +216,7 @@ elite_df.insert(8, 'Cationic Reorganisation Energy /eV', reorganisation_cationic
 #combine old elite 25% with new elite 25% and then sort again
 run_num_float = float(run_num_str)
 previous_run_num = str(int(run_num_float - 1))
-old_elite_df = pd.read_csv(f'elite_run_{previous_run_num}_df.csv') #previous elite 25% dataframe
+old_elite_df = pd.read_csv(f'dataframes/elite_run_{previous_run_num}_df.csv') #previous elite 25% dataframe
 
 #combine the two dataframes
 combined_elite_df = pd.concat([old_elite_df, elite_df])
@@ -269,17 +277,17 @@ current_run_df = pd.DataFrame()
 current_run_df.insert(0, 'Name', similarity_percentage_dic.keys())
 current_run_df.insert(1, 'Similarity Percentage', similarity_percentage_dic.values())
 
-run_df = pd.read_csv(f'run_df.csv') #this dataframe tracks the progress of the GA
+run_df = pd.read_csv(f'dataframes/run_df.csv') #this dataframe tracks the progress of the GA
 
 run_df_combined = pd.concat([run_df, current_run_df])
-run_df_combined.to_csv(f'run_df.csv', index=False)
+run_df_combined.to_csv(f'dataframes/run_df.csv', index=False)
 
 #save new elite dataframe without the scoring
 new_elite_df = new_elite_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Anionic Reorg Rank Order', 'Cationic Reorg Rank Order', 'Rank Sum Anionic', 'Rank Sum Cationic'], axis=1)
-new_elite_df.to_csv(f'elite_run_{run_num_str}_df.csv', index=False)
+new_elite_df.to_csv(f'dataframes/elite_run_{run_num_str}_df.csv', index=False)
 
 #combine all the runs into one big dataframe
-all_ran_molecules = pd.read_csv(f'ran_all_data.csv')
+all_ran_molecules = pd.read_csv(f'dataframes/ran_all_data.csv')
 
 clean_molecule_df = molecule_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Rank Sum'], axis=1)
 
@@ -293,7 +301,7 @@ filtered_clean_molecule_df = clean_molecule_df[~mask]
 
 adding_new_runs = pd.concat([all_ran_molecules, filtered_clean_molecule_df, elite_df])
 adding_new_runs_no_dup = adding_new_runs.drop_duplicates()
-adding_new_runs_no_dup.to_csv(f'ran_all_data.csv', index=False)
+adding_new_runs_no_dup.to_csv(f'rdataframes/an_all_data.csv', index=False)
 
 
 progress_file_path = 'GA_status.txt'

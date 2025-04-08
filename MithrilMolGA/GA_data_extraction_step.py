@@ -24,6 +24,7 @@ import os
 sys.path.append(os.path.join(os.environ['CONDA_PREFIX'],'share','RDKit','Contrib'))
 from SA_Score import sascorer
 import argparse
+import os
 
 # This file will first test if the calculations have been ran successfully
 # Split into two dictionaries, one with the successful and another with unsuccessful
@@ -51,7 +52,10 @@ else:
 
 
 #dict of molecules and their SMILES
-ran_molecules = open_dictionary(f'ran_{run_num_str}_molecules.json')
+ran_molecules = open_dictionary(f'run_dic/ran_{run_num_str}_molecules.json')
+
+#move into the data folder
+os.chdir('data')
 
 #turn into a list of tasks that calculation_status function can proccess
 task_list = []
@@ -101,6 +105,9 @@ for k, v in succesful_dict.items():
     mol_plan = finding_planairty_psi4(k, ran_molecules[k], linker_type, 'opt')
     planarity_dict[k] = float(mol_plan)
 
+#leave data folder
+os.chdir('../')
+
 run_x_df = pd.DataFrame()
 
 run_x_df.insert(0, 'Name', succesful_dict_smi.keys())
@@ -112,8 +119,8 @@ run_x_df.insert(5, 'Planarity', planarity_dict.values())
 run_x_df.insert(6, 'SA Score', SA_score_dict.values())
 
 
-run_x_df.to_csv(f'run_{run_num_str}_data.csv', index=False)
-save_dictionary(failed_molecules, f'failed_molecules_run_{run_num_str}.json')
+run_x_df.to_csv(f'dataframes/run_{run_num_str}_data.csv', index=False)
+save_dictionary(failed_molecules, f'failed_dic/failed_molecules_run_{run_num_str}.json')
 
 progress_file_path = 'GA_status.txt'
 
