@@ -18,7 +18,8 @@ import argparse
 
 # Define default variables
 options = {
-    'run_num': {'default': 0}
+    'run_num': {'default': 0},
+    'run_size' : {'default': 50}
 }
 
 # Create a parser for the arguments that can be changed by the user
@@ -32,6 +33,8 @@ if hasattr(args, 'run_num') and args.run_num:
     run_num_str = str(args.run_num)
 else:
     run_num_str = str(options['run_num']['default'])
+
+run_size = args.run_size if hasattr(args, 'run_size') else options['run_size']['default']
 
 
 
@@ -124,8 +127,8 @@ length_of_run = len(current_run)
 length_of_new_run = len(new_study_molecules)
 #new_molecules_needed = length_of_run - length_of_new_run
 
-#THIS IS JUST FOR TESTING PURPOSES
-new_molecules_needed = 50 - length_of_new_run
+#Makes sure the next run maintains a specific size so that the GA is healthy
+new_molecules_needed = run_size - length_of_new_run
 #new molecules to make up the numbers lost via elite step
 new_molecules = {}
 for i in range(new_molecules_needed + 1):
