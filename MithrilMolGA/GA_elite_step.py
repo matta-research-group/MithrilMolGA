@@ -75,7 +75,7 @@ molecule_df['Plan Rank Order'] = molecule_df['Planarity'].rank(ascending=False)
 molecule_df['SA Rank Order'] = molecule_df['SA Score'].rank(ascending=True)
 
 #having SA score not have as much weight
-molecule_df['Rank Sum'] = (molecule_df['EG Rank Order']/EG_rank_weight) + (molecule_df['Plan Rank Order']/planarity_rank_weight) + (molecule_df['SA Rank Order']/SA_rank_weight)
+molecule_df['Rank Sum'] = (molecule_df['EG Rank Order']*EG_rank_weight) + (molecule_df['Plan Rank Order']*planarity_rank_weight) + (molecule_df['SA Rank Order']*SA_rank_weight)
 
 #rank the combined planarity, energy gap and SA score rankings to produce the best balanced molecule
 sorted_molecule_df = molecule_df.sort_values(['Rank Sum'], ascending=True)
@@ -229,9 +229,9 @@ combined_elite_df['Anionic Reorg Rank Order'] = combined_elite_df['Anionic Reorg
 combined_elite_df['Cationic Reorg Rank Order'] = combined_elite_df['Cationic Reorganisation Energy /eV'].rank(ascending=True)
 
 #good at anioinc reorganisation energy
-combined_elite_df['Rank Sum Anionic'] = (combined_elite_df['EG Rank Order']/EG_rank_weight) + (combined_elite_df['Plan Rank Order']/planarity_rank_weight) + (combined_elite_df['SA Rank Order']/SA_rank_weight) + (combined_elite_df['Anionic Reorg Rank Order']/anioinc_reorg_rank_weight)
+combined_elite_df['Rank Sum Anionic'] = (combined_elite_df['EG Rank Order']*EG_rank_weight) + (combined_elite_df['Plan Rank Order']*planarity_rank_weight) + (combined_elite_df['SA Rank Order']*SA_rank_weight) + (combined_elite_df['Anionic Reorg Rank Order']*anioinc_reorg_rank_weight)
 #good at cationic reorganisation energy
-combined_elite_df['Rank Sum Cationic'] = (combined_elite_df['EG Rank Order']/EG_rank_weight) + (combined_elite_df['Plan Rank Order']/planarity_rank_weight) + (combined_elite_df['SA Rank Order']/SA_rank_weight) + (combined_elite_df['Cationic Reorg Rank Order']/cationic_reorg_rank_weight)
+combined_elite_df['Rank Sum Cationic'] = (combined_elite_df['EG Rank Order']*EG_rank_weight) + (combined_elite_df['Plan Rank Order']*planarity_rank_weight) + (combined_elite_df['SA Rank Order']*SA_rank_weight) + (combined_elite_df['Cationic Reorg Rank Order']*cationic_reorg_rank_weight)
 
 #rank the anionic reorganisation energy molecules
 sorted_anionic_reorg_df = combined_elite_df.sort_values(['Rank Sum Anionic'], ascending=True)
