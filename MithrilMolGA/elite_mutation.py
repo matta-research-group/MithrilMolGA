@@ -11,8 +11,8 @@ from QCflow.find_torsion import *
 from QCflow.write_psi4 import *
 from QCflow.run_psi4 import *
 from QCflow.energy_calculations import *
-from MithrilMolGA.molecule_mutation import *
-from MithrilMolGA.calculation_status import *
+from molecule_mutation import *
+from calculation_status import *
 import random
 import argparse
 
@@ -70,8 +70,21 @@ for k, v in elite_smi.items():
     if selected_choice == 'new_bio':
         #find the biofragment and replace it with a new biofragment
         new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
-        while Chem.CanonSmiles(new_molecule) in all_ran_smi_canon.values():
+
+        #there are less bio fragments so could run out of them
+        #this is a fail safe to make sure it doesn't get stuck
+        attempts = 0
+        while Chem.CanonSmiles(new_molecule) in all_ran_smi_canon.values() and attempts < 15:
             new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
+            attempts += 1
+            print(f'New Bio attempt {attempts}')
+        
+        if attempts == 15:
+            new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
+            print(f'New Bio attempt maxed out, using non bio fragment')
+
+            while Chem.CanonSmiles(new_molecule) in all_ran_smi_canon.values():
+                new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
         
         last_key, last_value = list(all_ran_smi_canon.items())[-1]
         #updates what the key will be by turning to int and then back to str
@@ -111,6 +124,22 @@ for k, v in elite_smi.items():
         #replace the linker
         replaced_linker = replace_linker(fragments, linker_dic)
 
+        #make sure no duplicate linker occures
+        #if the linker is tried lots of times then just replace the non_bio_fragment
+        attempts = 0
+        while Chem.CanonSmiles(replaced_linker) in all_ran_smi_canon.values() and attempts < 15:
+            replaced_linker = replace_linker(fragments, linker_dic)
+            attempts += 1
+            print(f'New linker attempt {attempts}')
+        
+        if attempts == 15:
+            replaced_linker = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
+            print(f'New linker attempt maxed out, using non bio fragment')
+
+            while Chem.CanonSmiles(replaced_linker) in all_ran_smi_canon.values():
+                replaced_linker = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
+
+
         last_key, last_value = list(all_ran_smi_canon.items())[-1]
         #updates what the key will be by turning to int and then back to str
         make_num = int(last_key) + 1
@@ -129,36 +158,12 @@ length_of_new_run = len(new_study_molecules)
 
 #Makes sure the next run maintains a specific size so that the GA is healthy
 new_molecules_needed = run_size - length_of_new_run
+
+if new_molecules_needed > 0:
 #new molecules to make up the numbers lost via elite step
-new_molecules = {}
-for i in range(new_molecules_needed + 1):
-    
-    #pick a random linker
-    random_linker_type = random.choice(list(linker_dic.keys()))
-    random_linker = linker_dic[random_linker_type]
-
-    #pick a random bio fragment
-    random_bio = random.choice(list(bio_dic.keys()))
-    fragment_1 = bio_dic[random_bio]
-
-    #pick at random if the second fragment will be bio or non_bio
-    weights = [0.25, 0.75]  # 70% chance for option1, 30% chance for option2
-    choices = ['bio', 'non_bio']
-    selected_choice = random.choices(choices, weights=weights, k=1)[0]
-    if selected_choice == 'bio':
-        random_bio_2 = random.choice(list(bio_dic.keys()))
-        fragment_2 = bio_dic[random_bio_2]
-
-    if selected_choice == 'non_bio':
-        random_non_bio = random.choice(list(non_bio_dic.keys()))
-        fragment_2 = non_bio_dic[random_non_bio]
-
-    #connect them all together
-    frag_1_and_linker = combine_structure(fragment_1, random_linker)
-    final_mol = combine_structure(frag_1_and_linker, fragment_2)
-
-    #make sure its a molecule that hasn't been ran before
-    while Chem.CanonSmiles(final_mol) in all_ran_smi_canon.values():
+    new_molecules = {}
+    for i in range(new_molecules_needed + 1):
+        
         #pick a random linker
         random_linker_type = random.choice(list(linker_dic.keys()))
         random_linker = linker_dic[random_linker_type]
@@ -168,7 +173,7 @@ for i in range(new_molecules_needed + 1):
         fragment_1 = bio_dic[random_bio]
 
         #pick at random if the second fragment will be bio or non_bio
-        weights = [0.25, 0.75]  # 25% chance for bio, 75% chance for non_bio
+        weights = [0.25, 0.75]  # 70% chance for option1, 30% chance for option2
         choices = ['bio', 'non_bio']
         selected_choice = random.choices(choices, weights=weights, k=1)[0]
         if selected_choice == 'bio':
@@ -183,7 +188,36 @@ for i in range(new_molecules_needed + 1):
         frag_1_and_linker = combine_structure(fragment_1, random_linker)
         final_mol = combine_structure(frag_1_and_linker, fragment_2)
 
-    new_molecules[str(int(i))] = final_mol
+        #make sure its a molecule that hasn't been ran before
+        while Chem.CanonSmiles(final_mol) in all_ran_smi_canon.values():
+            #pick a random linker
+            random_linker_type = random.choice(list(linker_dic.keys()))
+            random_linker = linker_dic[random_linker_type]
+
+            #pick a random bio fragment
+            random_bio = random.choice(list(bio_dic.keys()))
+            fragment_1 = bio_dic[random_bio]
+
+            #pick at random if the second fragment will be bio or non_bio
+            weights = [0.25, 0.75]  # 25% chance for bio, 75% chance for non_bio
+            choices = ['bio', 'non_bio']
+            selected_choice = random.choices(choices, weights=weights, k=1)[0]
+            if selected_choice == 'bio':
+                random_bio_2 = random.choice(list(bio_dic.keys()))
+                fragment_2 = bio_dic[random_bio_2]
+
+            if selected_choice == 'non_bio':
+                random_non_bio = random.choice(list(non_bio_dic.keys()))
+                fragment_2 = non_bio_dic[random_non_bio]
+
+            #connect them all together
+            frag_1_and_linker = combine_structure(fragment_1, random_linker)
+            final_mol = combine_structure(frag_1_and_linker, fragment_2)
+
+        new_molecules[str(int(i))] = final_mol
+
+else:
+    new_molecules = {}
 
 
 # Extract the last key from the reference dictionary

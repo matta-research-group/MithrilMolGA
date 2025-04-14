@@ -86,7 +86,7 @@ def is_file_present(file_path, reorganisation=None):
     elif os.path.exists(err_file_path):
         with open(err_file_path, 'r') as err_file:
             error_content = err_file.read().strip()
-            if any(word in error_content for word in ['OptError', 'failed', 'Could not converge SCF', 'ValueError', 'Could not converge geometry optimization', 'Please restart from the most recent geometry']):
+            if any(word in error_content for word in ['OptError', 'failed', 'Could not converge SCF', 'ValueError', 'Could not converge geometry optimization', 'Please restart from the most recent geometry', 'DUE TO TIME LIMIT', 'CANCELLED AT']):
                 return 'Calculation failed'
             else:
                 return 'Waiting'

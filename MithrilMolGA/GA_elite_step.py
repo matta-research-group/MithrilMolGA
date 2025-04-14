@@ -11,8 +11,8 @@ from QCflow.find_torsion import *
 from QCflow.write_psi4 import *
 from QCflow.run_psi4 import *
 from QCflow.energy_calculations import *
-from MithrilMolGA.molecule_mutation import *
-from MithrilMolGA.calculation_status import *
+from molecule_mutation import *
+from calculation_status import *
 import argparse
 import os
 
@@ -28,17 +28,20 @@ import os
 # Define default variables
 options = {
     'run_num': {'default': 0},
-    'EG_rank_weight': {'default': 1},
-    'planarity_rank_weight': {'default': 1},
-    'SA_rank_weight': {'default': 4},
+    'EG_rank_weight': {'default': 1.0},
+    'planarity_rank_weight': {'default': 1.0},
+    'SA_rank_weight': {'default': 0.25},
     'elite_value': {'default': 25},
-    'anioinc_reorg_rank_weight': {'default': 0.5},
-    'cationic_reorg_rank_weight': {'default': 0.5},
-    'elite_df_size': {'default': 10},
+    'anioinc_reorg_rank_weight': {'default': 2.0},
+    'cationic_reorg_rank_weight': {'default': 2.0},
     'functional' : {'default': 'b3lyp'},
     'basis_set' : {'default': '6-31g*'},
     'time' : {'default': 4},
-    'cpus' : {'default': 10}
+    'cpus' : {'default': 10},
+    'eg_elite_value' : {'default': 2.5},
+    'planarity_elite_value' : {'default': 0.82},
+    'anioinc_reorg_elite_value' : {'default': 0.350},
+    'catioinc_reorg_elite_value' : {'default': 0.350}
 }
 
 # Create a parser for the arguments that can be changed by the user
@@ -60,11 +63,15 @@ SA_rank_weight = args.SA_rank_weight if hasattr(args, 'SA_rank_weight') else opt
 elite_value = args.elite_value if hasattr(args, 'elite_value') else options['elite_value']['default']
 anioinc_reorg_rank_weight = args.anioinc_reorg_rank_weight if hasattr(args, 'anioinc_reorg_rank_weight') else options['anioinc_reorg_rank_weight']['default']
 cationic_reorg_rank_weight = args.cationic_reorg_rank_weight if hasattr(args, 'cationic_reorg_rank_weight') else options['cationic_reorg_rank_weight']['default']
-elite_df_size = args.elite_df_size if hasattr(args, 'elite_df_size') else options['elite_df_size']['default']
+#elite_df_size = args.elite_df_size if hasattr(args, 'elite_df_size') else options['elite_df_size']['default']
 functional = args.functional if hasattr(args, 'functional') else options['functional']['default']
 basis_set = args.basis_set if hasattr(args, 'basis_set') else options['basis_set']['default']
 time = args.time if hasattr(args, 'time') else options['time']['default']
 cpus = args.cpus if hasattr(args, 'cpus') else options['cpus']['default']
+eg_elite_value = args.eg_elite_value if hasattr(args, 'eg_elite_value') else options['eg_elite_value']['default']
+planarity_elite_value = args.planarity_elite_value if hasattr(args, 'planarity_elite_value') else options['planarity_elite_value']['default']
+anioinc_reorg_elite_value = args.anioinc_reorg_elite_value if hasattr(args, 'anioinc_reorg_elite_value') else options['anioinc_reorg_elite_value']['default']
+catioinc_reorg_elite_value = args.catioinc_reorg_elite_value if hasattr(args, 'catioinc_reorg_elite_value') else options['catioinc_reorg_elite_value']['default']
 
 #load molecule df
 molecule_df = pd.read_csv(f'dataframes/run_{run_num_str}_data.csv')
@@ -83,15 +90,19 @@ sorted_molecule_df = molecule_df.sort_values(['Rank Sum'], ascending=True)
 #retreave the elite 25% of the molecules
 elite_df = sorted_molecule_df.head(int(len(sorted_molecule_df)*(elite_value/100)))
 
+#remove any molecules that don't meet the planarity and energy gap threshold
+elite_df = elite_df[(elite_df['EG /eV'] <= eg_elite_value) & (elite_df['Planarity'] >= planarity_elite_value )]
+
 #dict of elite 25 monomers and their SMILES
 elite_smi_int = dict(zip(elite_df['Name'], elite_df['SMILES']))
+
 
 elite_smi = {}
 for k, v in elite_smi_int.items():
     elite_smi[str(k)] = v
 
 #make sure the new potential elites is long enough
-if len(elite_smi) <= elite_df_size:
+if len(elite_smi) <= 0:
     elite_smi_int = dict(zip(sorted_molecule_df['Name'], sorted_molecule_df['SMILES']))
 
     elite_smi = {}
@@ -239,14 +250,17 @@ sorted_anionic_reorg_df = combined_elite_df.sort_values(['Rank Sum Anionic'], as
 sorted_cationic_reorg_df = combined_elite_df.sort_values(['Rank Sum Cationic'], ascending=True)
 
 #retreave the elite 25% of the molecules
-elite_anionic = sorted_anionic_reorg_df.head(int(len(sorted_anionic_reorg_df)*(elite_value/100)))
-elite_cationic = sorted_cationic_reorg_df.head(int(len(sorted_cationic_reorg_df)*(elite_value/100)))
+#elite_anionic = sorted_anionic_reorg_df.head(int(len(sorted_anionic_reorg_df)*(elite_value/100)))
+#elite_cationic = sorted_cationic_reorg_df.head(int(len(sorted_cationic_reorg_df)*(elite_value/100)))
+
+elite_anionic = sorted_anionic_reorg_df
+elite_cationic = sorted_cationic_reorg_df
 
 new_elite_df = pd.concat([elite_anionic, elite_cationic])
 new_elite_df = new_elite_df.drop_duplicates()
 
 #make sure the elite doesn't get too small and can be set by the user to be at least a certain size
-if len(new_elite_df) <= elite_df_size:
+if len(new_elite_df) <= 0:
     new_elite_df = pd.concat([sorted_anionic_reorg_df, sorted_cationic_reorg_df]).drop_duplicates()
 
 else:
@@ -284,7 +298,13 @@ run_df_combined.to_csv(f'dataframes/run_df.csv', index=False)
 
 #save new elite dataframe without the scoring
 new_elite_df = new_elite_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Anionic Reorg Rank Order', 'Cationic Reorg Rank Order', 'Rank Sum Anionic', 'Rank Sum Cationic'], axis=1)
-new_elite_df.to_csv(f'dataframes/elite_run_{run_num_str}_df.csv', index=False)
+
+#removing poor elites that don't match the threshold values
+elite_df_plan_eg_filter = new_elite_df[(new_elite_df['EG /eV'] <= eg_elite_value) & (new_elite_df['Planarity'] >= planarity_elite_value )]
+
+elite_df_filter_final = elite_df_plan_eg_filter[(elite_df_plan_eg_filter['Anionic Reorganisation Energy /eV'] <= anioinc_reorg_elite_value) | (elite_df_plan_eg_filter['Cationic Reorganisation Energy /eV'] <= catioinc_reorg_elite_value)]
+
+elite_df_filter_final.to_csv(f'dataframes/elite_run_{run_num_str}_df.csv', index=False)
 
 #combine all the runs into one big dataframe
 all_ran_molecules = pd.read_csv(f'dataframes/ran_all_data.csv')
@@ -301,7 +321,7 @@ filtered_clean_molecule_df = clean_molecule_df[~mask]
 
 adding_new_runs = pd.concat([all_ran_molecules, filtered_clean_molecule_df, elite_df])
 adding_new_runs_no_dup = adding_new_runs.drop_duplicates()
-adding_new_runs_no_dup.to_csv(f'rdataframes/an_all_data.csv', index=False)
+adding_new_runs_no_dup.to_csv(f'dataframes/ran_all_data.csv', index=False)
 
 
 progress_file_path = 'GA_status.txt'
