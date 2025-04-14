@@ -15,6 +15,7 @@ from molecule_mutation import *
 from calculation_status import *
 import argparse
 import os
+from datetime import datetime
 
 #Open the data df
 #Sort top EG, top Plan, top SA
@@ -325,7 +326,8 @@ adding_new_runs_no_dup.to_csv(f'dataframes/ran_all_data.csv', index=False)
 
 
 progress_file_path = 'GA_status.txt'
+current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 # Open the file in append mode and write some content
 with open(progress_file_path, 'a') as file:
-    file.write(f'GA_elite_step complete for run {run_num_str}.\n')
+    file.write(f'GA_elite_step complete for run {run_num_str} at {current_time}.\n')

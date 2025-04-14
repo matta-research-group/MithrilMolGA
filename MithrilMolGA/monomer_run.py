@@ -18,6 +18,7 @@ import re
 import itertools
 import argparse
 import os
+from datetime import datetime
 
 # All monomers have to be CanonSmiles for retrieval from dataframes
 # This file takes all the molecules that want to be run
@@ -180,7 +181,8 @@ failed_monomers_file_name = f'failed_dic/failed_monomers_run_{run_num_str}.json'
 save_dictionary(failed_monomers, failed_monomers_file_name)
 
 progress_file_path = 'GA_status.txt'
+current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 # Open the file in append mode and write some content
 with open(progress_file_path, 'a') as file:
-    file.write(f'monomer_run complete for run {run_num_str}.\n')
+    file.write(f'monomer_run complete for run {run_num_str} at {current_time}.\n')

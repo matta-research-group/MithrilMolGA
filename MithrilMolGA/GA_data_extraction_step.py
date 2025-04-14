@@ -20,7 +20,7 @@ from rdkit.Chem.Draw import IPythonConsole
 from rdkit.Chem import rdDepictor
 rdDepictor.SetPreferCoordGen(True)
 import sys
-import os
+from datetime import datetime
 sys.path.append(os.path.join(os.environ['CONDA_PREFIX'],'share','RDKit','Contrib'))
 from SA_Score import sascorer
 import argparse
@@ -123,7 +123,8 @@ run_x_df.to_csv(f'dataframes/run_{run_num_str}_data.csv', index=False)
 save_dictionary(failed_molecules, f'failed_dic/failed_molecules_run_{run_num_str}.json')
 
 progress_file_path = 'GA_status.txt'
+current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 # Open the file in append mode and write some content
 with open(progress_file_path, 'a') as file:
-    file.write(f'GA_data_extraction_step complete for run {run_num_str}.\n')
+    file.write(f'GA_data_extraction_step complete for run {run_num_str} at {current_time}.\n')

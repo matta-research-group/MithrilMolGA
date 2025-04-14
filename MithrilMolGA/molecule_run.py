@@ -18,6 +18,7 @@ import re
 import itertools
 import argparse
 import os
+from datetime import datetime
 
 # This script runs the potential molecules
 # Its checks if the donor acceptor matching
@@ -138,7 +139,8 @@ save_dictionary(ran_molecules, f'run_dic/ran_{run_num_str}_molecules.json')
 save_dictionary(failed_D_A_match, f'failed_dic/failed_D_A_match_{run_num_str}_molecules.json')
 
 progress_file_path = 'GA_status.txt'
+current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 # Open the file in append mode and write some content
 with open(progress_file_path, 'a') as file:
-    file.write(f'molecule_run complete for run {run_num_str}.\n')
+    file.write(f'molecule_run complete for run {run_num_str} at {current_time}.\n')

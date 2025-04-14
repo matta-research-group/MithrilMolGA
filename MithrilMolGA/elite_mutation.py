@@ -13,6 +13,7 @@ from QCflow.run_psi4 import *
 from QCflow.energy_calculations import *
 from molecule_mutation import *
 from calculation_status import *
+from datetime import datetime
 import random
 import argparse
 
@@ -252,7 +253,8 @@ new_run_num_str = str(new_run_num)
 save_dictionary(molecules_to_run, f'submission_dic/molecules_to_run_{new_run_num_str}.json')
 
 progress_file_path = 'GA_status.txt'
+current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 # Open the file in append mode and write some content
 with open(progress_file_path, 'a') as file:
-    file.write(f'elite_mutation complete for run {run_num_str}.\n')
+    file.write(f'elite_mutation complete for run {run_num_str} at {current_time}.\n')
