@@ -24,7 +24,7 @@ import MithrilMolGA
 
 project = 'MithrilMolGA'
 author = 'Tristan Stephens-Jones, Micaela Matta'
-release = '0.1.0'
+release = '0.2.0'
 
 # -- General configuration ---------------------------------------------------
 
