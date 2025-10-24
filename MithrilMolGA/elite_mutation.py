@@ -11,10 +11,12 @@ from QCflow.find_torsion import *
 from QCflow.write_psi4 import *
 from QCflow.run_psi4 import *
 from QCflow.energy_calculations import *
-from MithrilMolGA.molecule_mutation import *
-from MithrilMolGA.calculation_status import *
+from molecule_mutation import *
+from calculation_status import *
+from datetime import datetime
 import random
 import argparse
+import subprocess
 
 # Define default variables
 options = {
@@ -51,7 +53,7 @@ elite_smi = dict(zip(elite_df['Name'], elite_df['SMILES']))
 #load all the molecules that have ever been ran in the GA
 all_ran_molecules_dic = open_dictionary('ga_dic/total_molecules_ran.json')
 
-all_ran_smi_canon = {k: Chem.CanonSmiles(v) for k, v in all_ran_molecules_dic.items()}
+all_ran_smi_canon = {k: Chem.CanonSmiles(v, useChiral=0) for k, v in all_ran_molecules_dic.items()}
 
 #linker_dic
 linker_dic = open_dictionary('ga_dic/linker_dic.json')
@@ -70,8 +72,26 @@ for k, v in elite_smi.items():
     if selected_choice == 'new_bio':
         #find the biofragment and replace it with a new biofragment
         new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
-        while Chem.CanonSmiles(new_molecule) in all_ran_smi_canon.values():
+
+        #there are less bio fragments so could run out of them
+        #this is a fail safe to make sure it doesn't get stuck
+        attempts = 0
+        while Chem.CanonSmiles(new_molecule, useChiral=0) in all_ran_smi_canon.values() and attempts < 15:
             new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
+            attempts += 1
+            print(f'New Bio attempt {attempts}')
+        
+        if attempts == 15:
+            new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
+            print(f'New Bio attempt maxed out, using non bio fragment')
+
+            attempts = 0
+            while Chem.CanonSmiles(new_molecule, useChiral=0) in all_ran_smi_canon.values() and attempts < 15:
+                attempts += 1
+                print(f'New non bio attempt {attempts}')
+            if attempts == 15:
+                continue
+                print(f'New Bio attempt maxed out, moving on')
         
         last_key, last_value = list(all_ran_smi_canon.items())[-1]
         #updates what the key will be by turning to int and then back to str
@@ -88,8 +108,23 @@ for k, v in elite_smi.items():
         #do this
         #find the non-biofragment and replace it with a new non-biofragment
         new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
-        while Chem.CanonSmiles(new_molecule) in all_ran_smi_canon.values():
+        attempts = 0
+        while Chem.CanonSmiles(new_molecule, useChiral=0) in all_ran_smi_canon.values() and attempts < 15:
             new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
+            attempts += 1
+            print(f'New Bio attempt {attempts}')
+        
+        if attempts == 15:
+            new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
+            print(f'New non Bio attempt maxed out, using bio fragment')
+
+            attempts = 0
+            while Chem.CanonSmiles(new_molecule, useChiral=0) in all_ran_smi_canon.values() and attempts < 15:
+                attempts += 1
+                print(f'New bio attempt {attempts}')
+            if attempts == 15:
+                continue
+                print(f'New non Bio attempt maxed out, moving on')
         
         last_key, last_value = list(all_ran_smi_canon.items())[-1]
         #updates what the key will be by turning to int and then back to str
@@ -111,6 +146,27 @@ for k, v in elite_smi.items():
         #replace the linker
         replaced_linker = replace_linker(fragments, linker_dic)
 
+        #make sure no duplicate linker occures
+        #if the linker is tried lots of times then just replace the non_bio_fragment
+        attempts = 0
+        while Chem.CanonSmiles(replaced_linker, useChiral=0) in all_ran_smi_canon.values() and attempts < 15:
+            replaced_linker = replace_linker(fragments, linker_dic)
+            attempts += 1
+            print(f'New linker attempt {attempts}')
+        
+        if attempts == 15:
+            replaced_linker = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
+            print(f'New linker attempt maxed out, using non bio fragment')
+
+            attempts = 0
+            while Chem.CanonSmiles(replaced_linker, useChiral=0) in all_ran_smi_canon.values() and attempts < 15:
+                replaced_linker = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
+                attempts += 1
+                print(f'New bio attempt {attempts}')
+            if attempts == 15:
+                continue
+                print(f'New non Bio attempt maxed out for linker, moving on')
+
         last_key, last_value = list(all_ran_smi_canon.items())[-1]
         #updates what the key will be by turning to int and then back to str
         make_num = int(last_key) + 1
@@ -129,36 +185,12 @@ length_of_new_run = len(new_study_molecules)
 
 #Makes sure the next run maintains a specific size so that the GA is healthy
 new_molecules_needed = run_size - length_of_new_run
+
+if new_molecules_needed > 0:
 #new molecules to make up the numbers lost via elite step
-new_molecules = {}
-for i in range(new_molecules_needed + 1):
-    
-    #pick a random linker
-    random_linker_type = random.choice(list(linker_dic.keys()))
-    random_linker = linker_dic[random_linker_type]
-
-    #pick a random bio fragment
-    random_bio = random.choice(list(bio_dic.keys()))
-    fragment_1 = bio_dic[random_bio]
-
-    #pick at random if the second fragment will be bio or non_bio
-    weights = [0.25, 0.75]  # 70% chance for option1, 30% chance for option2
-    choices = ['bio', 'non_bio']
-    selected_choice = random.choices(choices, weights=weights, k=1)[0]
-    if selected_choice == 'bio':
-        random_bio_2 = random.choice(list(bio_dic.keys()))
-        fragment_2 = bio_dic[random_bio_2]
-
-    if selected_choice == 'non_bio':
-        random_non_bio = random.choice(list(non_bio_dic.keys()))
-        fragment_2 = non_bio_dic[random_non_bio]
-
-    #connect them all together
-    frag_1_and_linker = combine_structure(fragment_1, random_linker)
-    final_mol = combine_structure(frag_1_and_linker, fragment_2)
-
-    #make sure its a molecule that hasn't been ran before
-    while Chem.CanonSmiles(final_mol) in all_ran_smi_canon.values():
+    new_molecules = {}
+    for i in range(new_molecules_needed + 1):
+        
         #pick a random linker
         random_linker_type = random.choice(list(linker_dic.keys()))
         random_linker = linker_dic[random_linker_type]
@@ -168,7 +200,7 @@ for i in range(new_molecules_needed + 1):
         fragment_1 = bio_dic[random_bio]
 
         #pick at random if the second fragment will be bio or non_bio
-        weights = [0.25, 0.75]  # 25% chance for bio, 75% chance for non_bio
+        weights = [0.25, 0.75]  # 70% chance for option1, 30% chance for option2
         choices = ['bio', 'non_bio']
         selected_choice = random.choices(choices, weights=weights, k=1)[0]
         if selected_choice == 'bio':
@@ -183,7 +215,44 @@ for i in range(new_molecules_needed + 1):
         frag_1_and_linker = combine_structure(fragment_1, random_linker)
         final_mol = combine_structure(frag_1_and_linker, fragment_2)
 
-    new_molecules[str(int(i))] = final_mol
+        attempts = 0
+        #make sure its a molecule that hasn't been ran before
+        while Chem.CanonSmiles(final_mol, useChiral=0) in all_ran_smi_canon.values() and attempts < 15:
+            #pick a random linker
+            attempts += 1
+            print(f'New molecule {attempts}')
+            random_linker_type = random.choice(list(linker_dic.keys()))
+            random_linker = linker_dic[random_linker_type]
+
+            #pick a random bio fragment
+            random_bio = random.choice(list(bio_dic.keys()))
+            fragment_1 = bio_dic[random_bio]
+
+            #pick at random if the second fragment will be bio or non_bio
+            weights = [0.25, 0.75]  # 25% chance for bio, 75% chance for non_bio
+            choices = ['bio', 'non_bio']
+            selected_choice = random.choices(choices, weights=weights, k=1)[0]
+            if selected_choice == 'bio':
+                random_bio_2 = random.choice(list(bio_dic.keys()))
+                fragment_2 = bio_dic[random_bio_2]
+
+            if selected_choice == 'non_bio':
+                random_non_bio = random.choice(list(non_bio_dic.keys()))
+                fragment_2 = non_bio_dic[random_non_bio]
+
+            #connect them all together
+            frag_1_and_linker = combine_structure(fragment_1, random_linker)
+            final_mol = combine_structure(frag_1_and_linker, fragment_2)
+        
+        if attempts == 15:
+            new_molecules_needed - 1
+            print(f'New molecule maxed out')
+            continue
+
+        new_molecules[str(int(i))] = final_mol
+
+else:
+    new_molecules = {}
 
 
 # Extract the last key from the reference dictionary
@@ -198,6 +267,12 @@ new_molecules_renumbered = {f"{base_number + 1 + i}": v for i, (k, v) in enumera
 if len(new_molecules_renumbered) == 0:
     molecules_to_run = new_study_molecules
 
+    run_num_int = int(run_num_str)
+    new_run_num = run_num_int + 1
+    new_run_num_str = str(new_run_num)
+
+    save_dictionary(molecules_to_run, f'submission_dic/molecules_to_run_{new_run_num_str}.json')
+
 else:
 
     # Extract the last key from the reference dictionary
@@ -211,14 +286,25 @@ else:
 
     molecules_to_run = new_molecules_renumbered | renumbered_dict_mutation
 
-run_num_int = int(run_num_str)
-new_run_num = run_num_int + 1
-new_run_num_str = str(new_run_num)
+    run_num_int = int(run_num_str)
+    new_run_num = run_num_int + 1
+    new_run_num_str = str(new_run_num)
 
-save_dictionary(molecules_to_run, f'submission_dic/molecules_to_run_{new_run_num_str}.json')
+#molecules_to_run = Chem.CanonSmiles(molecules_to_run, useChiral=0)
+
+    save_dictionary(molecules_to_run, f'submission_dic/molecules_to_run_{new_run_num_str}.json')
 
 progress_file_path = 'GA_status.txt'
+current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 # Open the file in append mode and write some content
 with open(progress_file_path, 'a') as file:
-    file.write(f'elite_mutation complete for run {run_num_str}.\n')
+    file.write(f'elite_mutation complete for run {run_num_str} at {current_time}.\n')
+
+with open('talk_to_GA.txt', 'r') as f:
+    content = f.read().strip()
+    if content == 'end':
+        file.write("The file says 'end'")
+        subprocess.run(['scancel', '-p', 'long_cpu', '--me'])
+    else:
+        print("The file does not say 'end' continue the GA")

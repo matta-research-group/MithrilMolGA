@@ -1,7 +1,0 @@
-This folder contains all the fragments and molecules ran using psi4
-
-Fragments are denoted with an m (for example 10_m)
-
-Molecules just have a number as their name (example 10)
-
-Fragment 10_m and molecule 10 are not related

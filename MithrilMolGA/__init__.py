@@ -6,3 +6,4 @@ from . import master_GA_script
 from . import molecule_mutation
 from . import molecule_run
 from . import monomer_run
+from . import ga_slurm

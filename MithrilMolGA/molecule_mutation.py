@@ -11,6 +11,7 @@ from QCflow.torsion_parser import *
 from QCflow.find_torsion import *
 import re
 import random
+from datetime import datetime
 
 def find_linker_type(mol):
     """
@@ -70,7 +71,7 @@ def find_fragment_type(mol_smi, bio_dic):
     fragment_one_type = []
     for k1, v1 in bio_dic.items():
         match_found = False
-        if Chem.CanonSmiles(v1) == Chem.CanonSmiles(mol_smi):
+        if Chem.CanonSmiles(v1, useChiral=0) == Chem.CanonSmiles(mol_smi, useChiral=0):
             match_found = True
             fragment_one_type.append('bio')
             break
@@ -188,7 +189,7 @@ def replace_linker(fragments, linker_dic):
     else:
         old_linker_canon = Chem.CanonSmiles(old_linker[0])
     # Randomly selecting a linker that is not the old linker
-    random_linker = random.choice([v for k, v in linker_dic.items() if Chem.CanonSmiles(v) != old_linker_canon])
+    random_linker = random.choice([v for k, v in linker_dic.items() if Chem.CanonSmiles(v, useChiral=0) != old_linker_canon])
     # Combining the fragments with the random linker
     frag_linker = combine_structure(molecule_fragments[0], random_linker)
     # Combine the remaining fragment with the old linker that is attached to the other fragment
@@ -246,14 +247,14 @@ def find_replacement_fragment(fragments, bio_dic, non_bio_dic, fragment_replace)
     swap_fragment[f'old_{fragment_types[random_replace]}'] = fragment_smi[random_replace]
 
     if fragment_types[random_replace] == 'bio':
-        old_fragment_connon = Chem.CanonSmiles(fragment_smi[random_replace])
+        old_fragment_connon = Chem.CanonSmiles(fragment_smi[random_replace], useChiral=0)
         #pick a random new fragment but it cannot be the same as the old one
-        new_fragment_name = random.choice([k for k, v in bio_dic.items() if Chem.CanonSmiles(v) != old_fragment_connon])
+        new_fragment_name = random.choice([k for k, v in bio_dic.items() if Chem.CanonSmiles(v, useChiral=0) != old_fragment_connon])
         swap_fragment['new_bio'] = bio_dic[new_fragment_name]
     else:
         old_fragment_connon = Chem.CanonSmiles(fragment_smi[random_replace])
         #pick a random new fragment but it cannot be the same as the old one
-        new_fragment_name = random.choice([k for k, v in non_bio_dic.items() if Chem.CanonSmiles(v) != old_fragment_connon])
+        new_fragment_name = random.choice([k for k, v in non_bio_dic.items() if Chem.CanonSmiles(v, useChiral=0) != old_fragment_connon])
         swap_fragment['new_non_bio'] = non_bio_dic[new_fragment_name]
 
     return swap_fragment
@@ -288,7 +289,7 @@ def replace_fragment(new_fragment, old_fragment, fragments):
     fragment_two = re.sub(r'\[I\]', '', fragments_one_attach[1])
 
     # Keeping fragment that is not being replaced
-    if Chem.CanonSmiles(fragment_one) != Chem.CanonSmiles(old_fragment):
+    if Chem.CanonSmiles(fragment_one, useChiral=0) != Chem.CanonSmiles(old_fragment, useChiral=0):
         constant_fragment = fragments_one_attach[0]
     else:
         constant_fragment = fragments_one_attach[1]
@@ -348,14 +349,14 @@ def swap_one_fragment(mol_smi, bio_dic, non_bio_dic, fragment_replace):
             replaced_smi.append(fragments_one_attach[0])
             random_key = random.choice(list(bio_dic.keys()))
             random_value = bio_dic[random_key]
-            while Chem.CanonSmiles(random_value) == Chem.CanonSmiles(fragments_one_attach[0]): #cannot be the same fragmeant over and over again
+            while Chem.CanonSmiles(random_value, useChiral=0) == Chem.CanonSmiles(fragments_one_attach[0], useChiral=0): #cannot be the same fragmeant over and over again
                 random_key = random.choice(list(bio_dic.keys()))
                 random_value = bio_dic[random_key]
         else:
             replaced_smi.append(fragments_one_attach[1])
             random_key = random.choice(list(bio_dic.keys()))
             random_value = bio_dic[random_key]
-            while Chem.CanonSmiles(random_value) == Chem.CanonSmiles(fragments_one_attach[1]): #cannot be the same fragmeant over and over again
+            while Chem.CanonSmiles(random_value, useChiral=0) == Chem.CanonSmiles(fragments_one_attach[1], useChiral=0): #cannot be the same fragmeant over and over again
                 random_key = random.choice(list(bio_dic.keys()))
                 random_value = bio_dic[random_key]
 
@@ -364,18 +365,18 @@ def swap_one_fragment(mol_smi, bio_dic, non_bio_dic, fragment_replace):
             replaced_smi.append(fragments_one_attach[0])
             random_key = random.choice(list(non_bio_dic.keys()))
             random_value = non_bio_dic[random_key]
-            while Chem.CanonSmiles(random_value) == Chem.CanonSmiles(fragments_one_attach[0]): #cannot be the same fragmeant over and over again
+            while Chem.CanonSmiles(random_value, useChiral=0) == Chem.CanonSmiles(fragments_one_attach[0], useChiral=0): #cannot be the same fragmeant over and over again
                 random_key = random.choice(list(non_bio_dic.keys()))
                 random_value = non_bio_dic[random_key]
         else:
             replaced_smi.append(fragments_one_attach[1])
             random_key = random.choice(list(non_bio_dic.keys()))
             random_value = non_bio_dic[random_key]
-            while Chem.CanonSmiles(random_value) == Chem.CanonSmiles(fragments_one_attach[1]): #cannot be the same fragmeant over and over again
+            while Chem.CanonSmiles(random_value, useChiral=0) == Chem.CanonSmiles(fragments_one_attach[1], useChiral=0): #cannot be the same fragmeant over and over again
                 random_key = random.choice(list(non_bio_dic.keys()))
                 random_value = non_bio_dic[random_key]
 
-    if Chem.CanonSmiles(replaced_smi[0]) == Chem.CanonSmiles(fragments_one_attach[0]):
+    if Chem.CanonSmiles(replaced_smi[0], useChiral=0) == Chem.CanonSmiles(fragments_one_attach[0], useChiral=0):
         new_fragment = combine_structure(linkage[0], fragments_one_attach[1])
         new_molecule = combine_structure(new_fragment, random_value)
         #new_fragment = fragments_one_attach[1]

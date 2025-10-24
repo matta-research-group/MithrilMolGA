@@ -12,15 +12,15 @@ from QCflow.find_torsion import *
 from QCflow.write_psi4 import *
 from QCflow.run_psi4 import *
 from QCflow.energy_calculations import *
-from MithrilMolGA.molecule_mutation import *
-from MithrilMolGA.calculation_status import *
+from molecule_mutation import *
+from calculation_status import *
 import re
 import itertools
 from rdkit.Chem.Draw import IPythonConsole
 from rdkit.Chem import rdDepictor
 rdDepictor.SetPreferCoordGen(True)
 import sys
-import os
+from datetime import datetime
 sys.path.append(os.path.join(os.environ['CONDA_PREFIX'],'share','RDKit','Contrib'))
 from SA_Score import sascorer
 import argparse
@@ -53,24 +53,27 @@ else:
 
 #dict of molecules and their SMILES
 ran_molecules = open_dictionary(f'run_dic/ran_{run_num_str}_molecules.json')
+archive_ran_molecules = open_dictionary(f'run_dic/archive_ran_{run_num_str}_molecules.json')
 
 #move into the data folder
 os.chdir('data')
 
 #turn into a list of tasks that calculation_status function can proccess
 task_list = []
-for k, v in ran_molecules.items():
-    task = lambda: is_file_present(f'{k}/{k}_opt_energy_and_gap.txt')
-    task_name = f'{k}_opt'
-    task_list.append((task_name, task()))
+if ran_molecules is not None:
+    for k, v in ran_molecules.items():
+        task = lambda: is_file_present(f'{k}/{k}_opt_energy_and_gap.txt')
+        task_name = f'{k}_opt'
+        task_list.append((task_name, task()))
 
 #returns the failed and successful calculations, keeps looping until all calculations are done
 succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_time=5)
 
 failed_molecules = {}
-for k, v in failed_dict.items():
-    k = k.split('_')[0] #just the number of the molecule, not the job
-    failed_molecules[k] = ran_molecules[k]
+if ran_molecules is not None:
+    for k, v in failed_dict.items():
+        k = k.split('_')[0] #just the number of the molecule, not the job
+        failed_molecules[k] = ran_molecules[k]
 
 SA_score_dict = {}
 HOMO_dict = {}
@@ -78,32 +81,34 @@ LUMO_dict = {}
 EG_dict = {}
 planarity_dict = {}
 succesful_dict_smi = {}
-for k, v in succesful_dict.items():
-    k = k.split('_')[0] #just the number of the molecule, not the job
+if ran_molecules is not None:
+    for k, v in succesful_dict.items():
+        k = k.split('_')[0] #just the number of the molecule, not the job
+        k = str(int(k))
 
-    succesful_dict_smi[k] =  ran_molecules[k]
+        succesful_dict_smi[k] =  ran_molecules[k]
 
-    m = Chem.MolFromSmiles(ran_molecules[k])
-    #Run synethic accessibility score
-    sa_score_val = sascorer.calculateScore(m)
-    SA_score_dict[k] = sa_score_val
+        m = Chem.MolFromSmiles(ran_molecules[k])
+        #Run synethic accessibility score
+        sa_score_val = sascorer.calculateScore(m)
+        SA_score_dict[k] = sa_score_val
 
-    file_path = f'{k}/{k}_opt_energy_and_gap.txt'
+        file_path = f'{k}/{k}_opt_energy_and_gap.txt'
 
-    data = extract_data_from_txt(file_path)
-    #energy calcs
-    mol_homo = data['homo']
-    HOMO_dict[k] = mol_homo
+        data = extract_data_from_txt(file_path)
+        #energy calcs
+        mol_homo = data['homo']
+        HOMO_dict[k] = mol_homo
 
-    mol_lumo = data['lumo']
-    LUMO_dict[k] = mol_lumo
+        mol_lumo = data['lumo']
+        LUMO_dict[k] = mol_lumo
 
-    mol_EG = data['energy_gap']
-    EG_dict[k] = mol_EG
-    linker_type = find_linker_type(m)
-    #planarity data
-    mol_plan = finding_planairty_psi4(k, ran_molecules[k], linker_type, 'opt')
-    planarity_dict[k] = float(mol_plan)
+        mol_EG = data['energy_gap']
+        EG_dict[k] = mol_EG
+        linker_type = find_linker_type(m)
+        #planarity data
+        mol_plan = finding_planairty_psi4(k, ran_molecules[k], linker_type, 'opt')
+        planarity_dict[k] = float(mol_plan)
 
 #leave data folder
 os.chdir('../')
@@ -118,12 +123,17 @@ run_x_df.insert(4, 'EG /eV', EG_dict.values())
 run_x_df.insert(5, 'Planarity', planarity_dict.values())
 run_x_df.insert(6, 'SA Score', SA_score_dict.values())
 
+archive_results = pd.read_csv(f'archive_dataframes/archive_run_{run_num_str}_data.csv')
 
-run_x_df.to_csv(f'dataframes/run_{run_num_str}_data.csv', index=False)
+run_x_final_df = pd.concat([run_x_df, archive_results])
+
+
+run_x_final_df.to_csv(f'dataframes/run_{run_num_str}_data.csv', index=False)
 save_dictionary(failed_molecules, f'failed_dic/failed_molecules_run_{run_num_str}.json')
 
 progress_file_path = 'GA_status.txt'
+current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 # Open the file in append mode and write some content
 with open(progress_file_path, 'a') as file:
-    file.write(f'GA_data_extraction_step complete for run {run_num_str}.\n')
+    file.write(f'GA_data_extraction_step complete for run {run_num_str} at {current_time}.\n')

@@ -12,12 +12,14 @@ from QCflow.find_torsion import *
 from QCflow.write_psi4 import *
 from QCflow.run_psi4 import *
 from QCflow.energy_calculations import *
-from MithrilMolGA.molecule_mutation import *
-from MithrilMolGA.calculation_status import *
+from molecule_mutation import *
+from calculation_status import *
 import re
 import itertools
 import argparse
 import os
+from datetime import datetime
+from collections import OrderedDict
 
 # All monomers have to be CanonSmiles for retrieval from dataframes
 # This file takes all the molecules that want to be run
@@ -94,7 +96,7 @@ molecules_to_run = {}
 for k1, v1 in molecules_monomers.items():
     match_found = False
     for k2, v2 in monomer_already_run.items():
-        if Chem.CanonSmiles(v1) == Chem.CanonSmiles(v2):
+        if Chem.CanonSmiles(v1, useChiral=0) == Chem.CanonSmiles(v2, useChiral=0):
             match_found = True
             print(f'{k1}: Match found')
             break
@@ -116,48 +118,51 @@ os.chdir('data')
 # if the data is missing, we need to run the psi4 calculations
 if molecules_to_run is not None:
     for k, v in molecules_to_run.items():
-        run_psi4('opt', k, v, time, cpus, functional, basis_set) #user set parameters
+        run_psi4('opt', k, v, 3, cpus, functional, basis_set) #user set parameters
 
 # Run the calculations and wait for the data to come back
 #turn into a list of tasks that calculation_status function can proccess
 task_list = []
-for k, v in molecules_to_run.items():
-    task = lambda: is_file_present(f'{k}/{k}_opt_energy_and_gap.txt')
-    task_name = f'{k}_opt'
-    task_list.append((task_name, task()))
+if molecules_to_run is not None:
+    for k, v in molecules_to_run.items():
+        task = lambda: is_file_present(f'{k}/{k}_opt_energy_and_gap.txt')
+        task_name = f'{k}_opt'
+        task_list.append((task_name, task()))
 
 #returns the failed and successful calculations, keeps looping until all calculations are done
 succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_time=1)
 
 #add failed monomers to a new dictionary
 failed_monomers = {}
-for k, v in failed_dict.items():
-    k = k.split('_')[0] #just the number of the molecule, not the job
-    failed_monomers[k] = molecules_to_run[k]
+if molecules_to_run is not None:
+    for k, v in failed_dict.items():
+        k = k.split('_')[0] #just the number of the molecule, not the job
+        failed_monomers[k] = molecules_to_run[k]
 
 #extract data from the successful monomers
 HOMO_dict = {}
 LUMO_dict = {}
 EG_dict = {}
-for k, v in succesful_dict.items():
-    k = '_'.join(k.split('_')[:2]) #just the number of the molecule, not the job
-    file_path = f'{k}/{k}_opt_energy_and_gap.txt'
+if molecules_to_run is not None:
+    for k, v in succesful_dict.items():
+        k = '_'.join(k.split('_')[:2]) #just the number of the molecule, not the job
+        file_path = f'{k}/{k}_opt_energy_and_gap.txt'
 
-    data = extract_data_from_txt(file_path)
-    #energy calcs
-    mol_homo = data['homo']
-    HOMO_dict[k] = mol_homo
+        data = extract_data_from_txt(file_path)
+        #energy calcs
+        mol_homo = data['homo']
+        HOMO_dict[k] = mol_homo
 
-    mol_lumo = data['lumo']
-    LUMO_dict[k] = mol_lumo
+        mol_lumo = data['lumo']
+        LUMO_dict[k] = mol_lumo
 
-    mol_EG = data['energy_gap']
-    EG_dict[k] = mol_EG
+        mol_EG = data['energy_gap']
+        EG_dict[k] = mol_EG
 
 succesful_dict_CanonSmiles = {}
 for k, v in succesful_dict.items():
     k = '_'.join(k.split('_')[:2])
-    succesful_dict_CanonSmiles[k] = Chem.CanonSmiles(molecules_to_run[k])
+    succesful_dict_CanonSmiles[k] = Chem.CanonSmiles(molecules_to_run[k], useChiral=0)
 #make a new dataframe with the new monomers data
 
 #move out of data dic
@@ -180,7 +185,8 @@ failed_monomers_file_name = f'failed_dic/failed_monomers_run_{run_num_str}.json'
 save_dictionary(failed_monomers, failed_monomers_file_name)
 
 progress_file_path = 'GA_status.txt'
+current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 # Open the file in append mode and write some content
 with open(progress_file_path, 'a') as file:
-    file.write(f'monomer_run complete for run {run_num_str}.\n')
+    file.write(f'monomer_run complete for run {run_num_str} at {current_time}.\n')
