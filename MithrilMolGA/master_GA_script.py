@@ -24,7 +24,7 @@ def single_run(run_number, functional='b3lyp', basis_set='6-31g*',
                time=6, number_of_cpus=10, EG_cutoff=3.2, 
                EG_rank_weight=1, planarity_rank_weight=1, SA_rank_weight=0.25,
                elite_value=25, anioinc_reorg_rank_weight=2, cationic_reorg_rank_weight=2, 
-               eg_elite_value=2.5, planarity_elite_value=0.82, anioinc_reorg_elite_value=0.350, catioinc_reorg_elite_value=0.350,
+               eg_elite_value=2.5, planarity_elite_value=0.67, anioinc_reorg_elite_value=0.300, catioinc_reorg_elite_value=0.300,
                run_size=50):
     """
     Runs a single interation of th GA workflow
@@ -84,7 +84,7 @@ for i in range(run_start, run_end):
                time=6, number_of_cpus=6, EG_cutoff=3.2, 
                EG_rank_weight=1, planarity_rank_weight=1, SA_rank_weight=0.25,
                elite_value=25, anioinc_reorg_rank_weight=2, cationic_reorg_rank_weight=2, 
-               eg_elite_value=2.5, planarity_elite_value=0.82, anioinc_reorg_elite_value=0.300, catioinc_reorg_elite_value=0.300,
+               eg_elite_value=2.5, planarity_elite_value=0.67, anioinc_reorg_elite_value=0.300, catioinc_reorg_elite_value=0.300,
                run_size=200)
     
     #if it has finished the batch then submit a new batch 
