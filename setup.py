@@ -1,8 +1,9 @@
 from setuptools import find_packages, setup
 
-# this can be more complicated and clever, but for now it's minimal
+# Minimal setup matching the folder name
 setup(
-    name='mithrilmolGA',
+    name='MithrilMolGA',  # Use the exact folder name (case-sensitive)
     version='0.1.0',
-    packages=find_packages(include=['mithrilmolGA', 'mithrilmolGA.*']),
+    packages=find_packages(include=['MithrilMolGA', 'MithrilMolGA.*']),
 )
+
