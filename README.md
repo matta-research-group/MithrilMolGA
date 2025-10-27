@@ -172,7 +172,6 @@ Where run_start is the first generation to run and run_end is the last generatio
     │   │   └── molecule_mutation.cpython-313.pyc
     │   ├── archive_dataframes
     │   │   ├── all_ran_reorg.csv
-    │   │   ├── archive_run_1_data.csv
     │   │   ├── d_a_df.csv
     │   │   ├── monomer_df.csv
     │   │   ├── old_dfs.ipynb

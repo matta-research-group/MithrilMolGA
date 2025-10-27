@@ -157,6 +157,6 @@ dependencies:
   - pip:
     - geometric
     - msgpack
-    - git+https://github.com/matta-research-group/QCflow.git@qcflow-psi4
+    - git+https://github.com/matta-research-group/QCflow.git@qcflow-0.4
     - statsmodels
     - zstandard
