@@ -166,6 +166,10 @@ succesful_dict, failed_dict, attempts = calculations_status(task_list, sleep_tim
 
 print('Calculations status test finished')
 
+    # ==============================
+    # Data extraction
+    # ==============================
+
 failed_molecules = {}
 for k, v in failed_dict.items():
     k = k.split('_')[0]
@@ -194,6 +198,10 @@ for k, v in succesful_molecules.items():
     reorganisation_cationic[k] = cation_reorg
 
 print('Calculating reorg complete')
+
+    # ==============================
+    # Handling semi failed molecules
+    # ==============================
 
 #Making sure that if just one of the reorganisation energies have failed then the molecules still progresses
 if len(failed_dict.items()) != 0:
@@ -234,6 +242,10 @@ print('semi failed reorg molecules calculated complete')
 
 #leave data folder
 os.chdir('../')
+
+    # ==============================
+    # Ranking systems again with reorganisation energy and old elite results
+    # ==============================
 
 #create dataframe of elite 25% with reorganmsaition energy
 elite_df = elite_df.drop(['EG Rank Order', 'Plan Rank Order', 'SA Rank Order', 'Rank Sum'], axis=1)
