@@ -144,6 +144,7 @@ Additionally, the HPC modules and queue names will be different unless you are u
 
 ## Future Work
 
+- Write tests
 - Change from pandas to polars for dataframes
 - Add documentation, that includes a github website
 - Add functionality that the GA can draw from DFT data available online in public databases
