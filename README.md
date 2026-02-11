@@ -4,7 +4,7 @@
 
 ## MithrilMolGA
 
-MithrilMolGA is part of a publication by Tristan Stephens-Jones and Micaela Matta --> Paper (https://pubs.rsc.org/en/content/articlelanding/2026/ta/d5ta10351g)
+MithrilMolGA is part of a publication by Tristan Stephens-Jones and Micaela Matta --> [Paper](https://pubs.rsc.org/en/content/articlelanding/2026/ta/d5ta10351g)
 
 
 ## MithrilMolGA Workflow
@@ -13,7 +13,7 @@ MithrilMolGA is part of a publication by Tristan Stephens-Jones and Micaela Matt
 
 ## QCflow
 
-This GA uses a package created by Tristan Stephens-Jones as part of the Matta Research Group. It uses QCflow and more specifically the beta version of the Psi4 version (https://github.com/matta-research-group/QCflow.git). All the calculations submitted using this GA use Psi4 and are not adapted for Gaussian16 as Psi4 is more accessible and was found to be faster and produce highly similar results compared to G16.
+This GA uses a package created by Tristan Stephens-Jones as part of the Matta Research Group. It uses [QCflow](https://github.com/matta-research-group/QCflow.git) and more specifically the beta version of the Psi4 version. All the calculations submitted using this GA use Psi4 and are not adapted for Gaussian16 as Psi4 is more accessible and was found to be faster and produce highly similar results compared to G16.
 
 Tristan is the principle developer and any questions should be directed to him either via the issues feature of GitHub or via email.
 
