@@ -32,6 +32,9 @@ from collections import OrderedDict
 
 #FILE NAMES ARE ONLY PLACEHOLDERS AT THIS STAGE
 
+# ==============================
+# Default variables
+# ==============================
 options = {
     'run_num': {'default': 0},
     'set_EG_value': {'default': 3.2},
@@ -41,6 +44,10 @@ options = {
     'cpus' : {'default': 10}
 }
 
+
+# ==============================
+# Setting variables
+# ==============================
 
 # Create a parser for the arguments that can be changed by the user
 parser = argparse.ArgumentParser()
@@ -61,6 +68,10 @@ basis_set = args.basis_set if hasattr(args, 'basis_set') else options['basis_set
 time = args.time if hasattr(args, 'time') else options['time']['default']
 cpus = args.cpus if hasattr(args, 'cpus') else options['cpus']['default']
 
+
+# ==============================
+# Loading DataFrames and Dictionaries
+# ==============================
 
 #load molecules to run
 potential_molecules = open_dictionary(f'submission_dic/molecules_to_run_{run_num_str}.json')
@@ -92,6 +103,10 @@ for k, v in potential_molecules.items():
     molecules_monomers[f'{k}_a'] = fragment_one
     molecules_monomers[f'{k}_b'] = fragment_two
 
+# =========================================================
+# Creating the dictionary of fragments that need to be ran
+# =========================================================
+
 molecules_to_run = {}
 for k1, v1 in molecules_monomers.items():
     match_found = False
@@ -114,6 +129,10 @@ for k1, v1 in molecules_monomers.items():
 
 #go into the data folder
 os.chdir('data')
+
+# ==============================
+# Running Psi4 Calcultions
+# ==============================
 
 # if the data is missing, we need to run the psi4 calculations
 if molecules_to_run is not None:
@@ -138,6 +157,10 @@ if molecules_to_run is not None:
     for k, v in failed_dict.items():
         k = k.split('_')[0] #just the number of the molecule, not the job
         failed_monomers[k] = molecules_to_run[k]
+
+# ==============================
+# Data extraction
+# ==============================
 
 #extract data from the successful monomers
 HOMO_dict = {}
@@ -184,6 +207,10 @@ df_concat.to_csv(f'dataframes/monomer_df.csv', index=False)
 failed_monomers_file_name = f'failed_dic/failed_monomers_run_{run_num_str}.json'
 save_dictionary(failed_monomers, failed_monomers_file_name)
 
+
+# ==============================
+# Log progress
+# ==============================
 progress_file_path = 'GA_status.txt'
 current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 

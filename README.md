@@ -2,18 +2,20 @@
   <img src="mirthilmolga_log-Chatgpt.png" alt="MithrilMolGA Logo" width="300" height="300">
 </div>
 
-## MithrilMolGa Workflow
+## MithrilMolGA
+
+MithrilMolGA is part of a publication by Tristan Stephens-Jones and Micaela Matta --> Paper (https://pubs.rsc.org/en/content/articlelanding/2026/ta/d5ta10351g)
+
+
+## MithrilMolGA Workflow
 
 ![logo](GA_detailed_flowchart.drawio.png)
 
 ## QCflow
 
-This GA uses a package created by Tristan Stephens-Jones as part of the Matta Research Group. It uses QCflow and more specifically the beta version of the Psi4 version (https://github.com/matta-research-group/QCflow/tree/qcflow-psi4). All the calculations submitted using this GA use Psi4 and are not adapted for Gaussian16 as Psi4 is more accessible and was found to be faster and produce highly similar results compared to G16.
+This GA uses a package created by Tristan Stephens-Jones as part of the Matta Research Group. It uses QCflow and more specifically the beta version of the Psi4 version (https://github.com/matta-research-group/QCflow.git). All the calculations submitted using this GA use Psi4 and are not adapted for Gaussian16 as Psi4 is more accessible and was found to be faster and produce highly similar results compared to G16.
 
 Tristan is the principle developer and any questions should be directed to him either via the issues feature of GitHub or via email.
-
-## Notes
-This contains the scripts that will be used within the GA. Alot of the file names are currently just place holders.
 
 ## Scripts
 `monomer_run.py` this takes all the potential molecules, checks if the monomers have been run and if they haven't it runs them
@@ -54,6 +56,8 @@ This contains the scripts that will be used within the GA. Alot of the file name
 
 `molecule_to_run_1.json` - dictionary of all molecules to run for the first run of the GA
 
+`bio_dic` and `non_bio_dic` are place holder names and is not required to be bioinspired or not
+
 ## Archive DataFrames
 
 Archive DFT data can be used to speed up the GA by avoiding rerunning calculations on molecules that have already been ran in previous GA runs or previous user calculations.
@@ -66,6 +70,8 @@ Archive DFT data can be used to speed up the GA by avoiding rerunning calculatio
 
 `ran_all_data.csv` - contains data for all the molecules ran in previous runs of GA
 
+These dataframes can be added to with data collected previously by the user
+
 ## Progress Checking
 
 When the GA is submitted a `GA_status.txt` file is created. This file tracks when each script has been successful completed and shows for which run it is completed for. This is helpful for the user to know where the GA is currently at.
@@ -74,7 +80,7 @@ When the GA is submitted a `GA_status.txt` file is created. This file tracks whe
 
 ## Halting Calculations
 
-By entering `end` into the `talk_to_GA.txt` file the GA will finish the current generation and then halt. This is useful if the user wants to stop the GA early.
+By entering `end` into the `talk_to_GA.txt` file the GA will finish the current generation and then halt. This is useful if the user wants to stop the GA early or to pause its progress to analyse current results.
 
 ## User Determined Values & Their Defaults in master_GA_script.py
 
@@ -95,6 +101,28 @@ By entering `end` into the `talk_to_GA.txt` file the GA will finish the current 
 - catioinc_reorg_elite_value = `0.300` (eV) cationic reorganisation energy cutoff for elite molecules
 - run_size = `200` minimum number of molecules to be run in each GA generation
 
+## Instillation
+
+Firstly install [QCflow](https://github.com/matta-research-group/QCflow.git) (management software to submit calcultions)
+
+```bash
+git clone https://github.com/matta-research-group/QCflow.git
+cd QCflow
+# install requirements into new environment
+conda env create -f QCflow.yml
+conda activate QCflow
+# install the QCflow package
+pip install .
+conda update psi4
+```
+
+Then clone this repository
+
+```bash
+git clone https://github.com/matta-research-group/MithrilMolGA.git
+cd MithrilMolGA
+```
+
 ## Usage
 
 To use the GA the user should first adjust the user defined values in `master_GA_script.py` to their desired values.
@@ -112,11 +140,15 @@ python3 master_GA_script.py --run_start 1 --run_end 5
 ```
 Where run_start is the first generation to run and run_end is the last generation to run. Once the GA reaches 5, it will submit the next 5, this is just to ensure that the GA does not run for too long on the HPC and get killed.
 
+Additionally, the HPC modules and queue names will be different unless you are using the CREATE HPC at KCL. Therefor adjusting the `ga_slurm.py` and the `master_GA_script.py` maybe necessary to work on your chosen HPC.
+
 ## Future Work
 
 - Change from pandas to polars for dataframes
-- Add documentation
+- Add documentation, that includes a github website
 - Add functionality that the GA can draw from DFT data available online in public databases
+
+Any future work can be developed my user and is strongly encouraged to create pull requests for any additions you have made.
 
 ## File Tree
 

@@ -56,7 +56,7 @@ os.makedirs('dataframes', exist_ok=True)
 os.makedirs('failed_dic', exist_ok=True)
 
 # ==============================
-# Load dictionaries safely
+# Load dictionaries
 # ==============================
 ran_molecules_path = f'run_dic/ran_{run_num_str}_molecules.json'
 archive_ran_molecules_path = f'run_dic/archive_ran_{run_num_str}_molecules.json'
@@ -64,9 +64,8 @@ archive_ran_molecules_path = f'run_dic/archive_ran_{run_num_str}_molecules.json'
 ran_molecules = open_dictionary(ran_molecules_path) if os.path.exists(ran_molecules_path) else {}
 archive_ran_molecules = open_dictionary(archive_ran_molecules_path) if os.path.exists(archive_ran_molecules_path) else {}
 
-# ==============================
+
 # Move into the data folder
-# ==============================
 os.makedirs('data', exist_ok=True)
 os.chdir('data')
 
@@ -125,9 +124,7 @@ if ran_molecules:
         # Planarity data
         planarity_dict[mol_key] = float(finding_planairty_psi4(mol_key, mol_smi, linker_type, 'opt'))
 
-# ==============================
-# Leave data folder
-# ==============================
+#leave data folder
 os.chdir('../')
 
 # ==============================

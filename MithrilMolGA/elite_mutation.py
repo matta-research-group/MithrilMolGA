@@ -19,6 +19,7 @@ import argparse
 import subprocess
 import os
 
+
 # ==============================
 # Defaults at import time
 # ==============================
@@ -128,6 +129,7 @@ def run_elite_mutation(run_num_str, run_size):
                 print(f'New non Bio attempt {attempts}')
 
             if attempts == 15:
+                # could run out of non bio fragments so then try swapping bio fragments instead
                 new_molecule = swap_one_fragment(v, bio_dic, non_bio_dic, 'bio')
                 print(f'New non Bio attempt maxed out, using bio fragment')
 
@@ -158,6 +160,7 @@ def run_elite_mutation(run_num_str, run_size):
                 print(f'New linker attempt {attempts}')
 
             if attempts == 15:
+                # could run out of linkers so then try swapping non bio fragments instead
                 replaced_linker = swap_one_fragment(v, bio_dic, non_bio_dic, 'non_bio')
                 print(f'New linker attempt maxed out, using non bio fragment')
 
